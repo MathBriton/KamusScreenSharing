@@ -12,6 +12,11 @@
     "build": "npm run build --workspace server && npm run build --workspace web",
     "typecheck": "npm run typecheck --workspaces",
     "start": "npm run start --workspace server",
-    "livekit": "docker compose up livekit"
+    "livekit": "docker compose up livekit",
+    "test:e2e": "playwright test",
+    "livekit:local": "sh scripts/livekit-dev.sh"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0"
   }
 }

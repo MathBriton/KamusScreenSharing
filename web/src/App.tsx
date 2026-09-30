@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { Role } from './api';
 import { Home } from './Home';
+import { TopBar } from './layout/TopBar';
 import { RoomView } from './RoomView';
 import {
   forgetRoom,
@@ -63,25 +64,41 @@ export function App() {
     if (session) window.history.replaceState(null, '', sessionUrl({ room: session.room, role }));
   };
 
-  if (!session || !name) {
-    return (
-      <Home
-        initialName={name}
-        initialRoom={session?.room}
-        recentRooms={recentRooms}
-        onEnter={enter}
-        onForgetRoom={forget}
-      />
-    );
-  }
+  const joinRoom = (room: string) => {
+    if (name) {
+      enter(room, 'viewer', name);
+    } else {
+      window.history.pushState(null, '', sessionUrl({ room, role: 'viewer' }));
+      setSession({ room, role: 'viewer' });
+    }
+  };
+
+  const inRoom = !!session && !!name;
+
   return (
-    <RoomView
-      key={session.room}
-      room={session.room}
-      initialRole={session.role}
-      name={name}
-      onRoleChange={changeRole}
-      onLeave={leave}
-    />
+    <div className="flex h-dvh flex-col">
+      <TopBar name={name} currentRoom={inRoom ? session.room : undefined} onHome={leave} onJoinRoom={joinRoom} />
+      {inRoom ? (
+        <RoomView
+          key={session.room}
+          room={session.room}
+          initialRole={session.role}
+          name={name}
+          onRoleChange={changeRole}
+          onLeave={leave}
+        />
+      ) : (
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <Home
+            initialName={name}
+            initialRoom={session?.room}
+            initialRole={session?.role}
+            recentRooms={recentRooms}
+            onEnter={enter}
+            onForgetRoom={forget}
+          />
+        </div>
+      )}
+    </div>
   );
 }

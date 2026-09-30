@@ -5,3 +5,9 @@ dist/
 .DS_Store
 deploy/.env
 deploy/livekit.yaml
+server/data/
+data/
+.cache/
+e2e/.data/
+test-results/
+playwright-report/

@@ -18,6 +18,9 @@ COPY --from=build /app/node_modules node_modules
 COPY --from=build /app/server/package.json server/
 COPY --from=build /app/server/dist server/dist
 COPY --from=build /app/web/dist web/dist
+# Banco SQLite e imagens do chat (volume no docker compose).
+RUN mkdir -p /app/data && chown node:node /app/data
+ENV DATA_DIR=/app/data
 USER node
 EXPOSE 3001
-CMD ["node", "server/dist/index.js"]
+CMD ["node", "--disable-warning=ExperimentalWarning", "server/dist/index.js"]

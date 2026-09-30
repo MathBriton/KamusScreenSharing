@@ -8,7 +8,7 @@ export function ParticipantList({ participants }: { participants: ParticipantInf
       <h3 className="mb-3 text-xs font-medium tracking-wide text-muted-foreground uppercase">
         Na sala ({participants.length})
       </h3>
-      <ul className="grid max-h-[30vh] gap-2 overflow-y-auto">
+      <ul className="grid max-h-[30vh] gap-2 overflow-y-auto" aria-label="Participantes">
         {participants.map((p) => (
           <li key={p.identity} className="flex items-center gap-2">
             <Avatar className="size-7">

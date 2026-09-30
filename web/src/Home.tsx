@@ -1,21 +1,25 @@
 import { useState, type FormEvent } from 'react';
-import { History, LogIn, MonitorUp, X } from 'lucide-react';
+import { History, LogIn, MonitorUp, Smartphone, X } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type { Role } from './api';
+import { canShareScreen } from './device';
 import { isValidRoomName, normalizeRoomName, randomRoomId } from './rooms';
 
 interface Props {
   initialName: string;
   initialRoom?: string;
+  /** Papel pedido no link (?apresentar), mantido ao entrar pelo formulário. */
+  initialRole?: Role;
   recentRooms: string[];
   onEnter: (room: string, role: Role, name: string) => void;
   onForgetRoom: (room: string) => void;
 }
 
-export function Home({ initialName, initialRoom, recentRooms, onEnter, onForgetRoom }: Props) {
+export function Home({ initialName, initialRoom, initialRole, recentRooms, onEnter, onForgetRoom }: Props) {
   const [name, setName] = useState(initialName);
   const [newRoom, setNewRoom] = useState('');
   const [room, setRoom] = useState(initialRoom ?? '');
@@ -26,12 +30,14 @@ export function Home({ initialName, initialRoom, recentRooms, onEnter, onForgetR
 
   const present = (e: FormEvent) => {
     e.preventDefault();
-    onEnter(newRoom.trim() ? newRoomName : randomRoomId(), 'presenter', displayName);
+    // No celular não dá para transmitir: entra na sala só para assistir.
+    onEnter(newRoom.trim() ? newRoomName : randomRoomId(), canShareScreen ? 'presenter' : 'viewer', displayName);
   };
 
   const join = (e: FormEvent) => {
     e.preventDefault();
-    if (isValidRoomName(joinRoomName)) onEnter(joinRoomName, 'viewer', displayName);
+    const role = initialRoom && initialRole === 'presenter' && canShareScreen ? 'presenter' : 'viewer';
+    if (isValidRoomName(joinRoomName)) onEnter(joinRoomName, role, displayName);
   };
 
   return (
@@ -91,7 +97,7 @@ export function Home({ initialName, initialRoom, recentRooms, onEnter, onForgetR
       {!initialRoom && (
         <Card>
           <CardHeader>
-            <CardTitle>Apresentar</CardTitle>
+            <CardTitle>{canShareScreen ? 'Apresentar' : 'Criar sala'}</CardTitle>
             <CardDescription>
               Dê um nome para ter uma sala fixa do grupo (o link é sempre o mesmo), ou deixe vazio para
               gerar um código.
@@ -99,6 +105,7 @@ export function Home({ initialName, initialRoom, recentRooms, onEnter, onForgetR
           </CardHeader>
           <CardContent>
             <form className="grid gap-4" onSubmit={present}>
+              {!canShareScreen && <MobileNotice />}
               <div className="grid gap-2">
                 <Label htmlFor="new-room">Nome da sala (opcional)</Label>
                 <Input
@@ -115,8 +122,12 @@ export function Home({ initialName, initialRoom, recentRooms, onEnter, onForgetR
                 )}
               </div>
               <Button type="submit" disabled={!!newRoom.trim() && !isValidRoomName(newRoomName)}>
-                <MonitorUp />
-                {newRoom.trim() ? 'Entrar e apresentar' : 'Criar sala e compartilhar'}
+                {canShareScreen ? <MonitorUp /> : <LogIn />}
+                {!canShareScreen
+                  ? 'Criar sala'
+                  : newRoom.trim()
+                    ? 'Entrar e apresentar'
+                    : 'Criar sala e compartilhar'}
               </Button>
             </form>
           </CardContent>
@@ -152,5 +163,18 @@ export function Home({ initialName, initialRoom, recentRooms, onEnter, onForgetR
         </CardContent>
       </Card>
     </main>
+  );
+}
+
+export function MobileNotice() {
+  return (
+    <Alert>
+      <Smartphone />
+      <AlertTitle>Celular só assiste</AlertTitle>
+      <AlertDescription>
+        Navegadores de celular (Android e iPhone) não permitem compartilhar a tela. Você pode criar a sala e
+        assistir; para transmitir, use um computador.
+      </AlertDescription>
+    </Alert>
   );
 }

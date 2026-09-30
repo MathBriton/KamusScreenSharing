@@ -6,7 +6,9 @@ Tudo roda numa única VPS com Docker Compose, sem Kubernetes:
 | --------- | ------------------------------------------------------------------------- |
 | `caddy`   | HTTPS automático (Let's Encrypt) e proxy para o app e para o LiveKit      |
 | `livekit` | SFU (distribui a tela para os espectadores) com **TURN embutido**         |
-| `app`     | API de tokens + frontend (imagem gerada pelo `Dockerfile` da raiz)        |
+| `app`     | API (tokens, chat, amigos) + frontend (imagem do `Dockerfile` da raiz)    |
+
+O chat (banco SQLite e imagens coladas) fica no volume Docker `kamus_app_data`.
 
 Tudo fica sob **um único domínio** (ex.: `share.seudominio.com`):
 
@@ -80,6 +82,45 @@ O restart derruba as salas ativas por alguns segundos, por isso o horário de ma
 git pull
 docker compose up -d --build
 ```
+
+## Deploy automático (GitHub Actions)
+
+O workflow `.github/workflows/ci.yml` roda os testes em todo push. Se estiver habilitado, a cada
+push na `main` com testes verdes ele entra na VPS por SSH e roda `git reset --hard origin/main` e
+`docker compose up -d --build`. Os arquivos `deploy/.env` e `deploy/livekit.yaml` não são
+versionados, então não são afetados.
+
+1. Na VPS, clone o repositório (ex.: em `~/kamus`) e faça o primeiro deploy manual, como acima. O
+   usuário do deploy precisa estar no grupo `docker` (`sudo usermod -aG docker $USER`). Se o
+   repositório for privado, cadastre uma *deploy key* de leitura para o `git fetch` funcionar.
+2. Gere uma chave só para o GitHub Actions e autorize-a na VPS:
+   ```bash
+   ssh-keygen -t ed25519 -f kamus_deploy -N ""
+   ssh-copy-id -i kamus_deploy.pub usuario@sua-vps
+   ```
+3. No GitHub, em **Settings → Secrets and variables → Actions**:
+
+   | Tipo | Nome | Valor |
+   | --- | --- | --- |
+   | Secret | `DEPLOY_HOST` | IP ou domínio da VPS |
+   | Secret | `DEPLOY_USER` | usuário SSH |
+   | Secret | `DEPLOY_SSH_KEY` | conteúdo de `kamus_deploy` (chave **privada**) |
+   | Secret (opcional) | `DEPLOY_PATH` | pasta do repositório na VPS (padrão `~/kamus`) |
+   | Secret (opcional) | `DEPLOY_PORT` | porta SSH (padrão `22`) |
+   | Secret (opcional) | `DEPLOY_KNOWN_HOSTS` | saída de `ssh-keyscan sua-vps` (recomendado; sem ele o host é aceito na primeira conexão) |
+   | Variable | `DEPLOY_ENABLED` | `true` |
+
+Sem `DEPLOY_ENABLED=true`, o job de deploy é simplesmente pulado.
+
+## Backup do chat
+
+```bash
+docker run --rm -v kamus_app_data:/data -v "$PWD":/backup alpine \
+  tar czf /backup/kamus-chat-$(date +%F).tgz -C /data .
+```
+
+Mensagens e imagens com mais de 90 dias são apagadas automaticamente. Para mudar o prazo,
+defina `RETENTION_DAYS` no `deploy/.env`.
 
 ## Problemas comuns
 

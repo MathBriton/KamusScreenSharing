@@ -14,8 +14,15 @@ services:
       HOST: 127.0.0.1
       PORT: 3001
       LIVEKIT_URL: wss://${DOMAIN}
+      # O servidor fala com a API do LiveKit direto, sem passar pelo Caddy.
+      LIVEKIT_API_URL: http://127.0.0.1:7880
       LIVEKIT_API_KEY: ${LIVEKIT_API_KEY}
       LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET}
+      # Mensagens e imagens do chat mais antigas que isso são apagadas.
+      RETENTION_DAYS: ${RETENTION_DAYS:-90}
+      MAX_UPLOAD_MB: ${MAX_UPLOAD_MB:-10}
+    volumes:
+      - app_data:/app/data
 
   livekit:
     image: livekit/livekit-server:v1.9.1
@@ -42,5 +49,6 @@ services:
       - caddy_config:/config
 
 volumes:
+  app_data:
   caddy_data:
   caddy_config:

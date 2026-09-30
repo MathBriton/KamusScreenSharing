@@ -3,3 +3,8 @@
 .git
 .env
 deploy
+.cache
+e2e
+test-results
+playwright-report
+**/data
