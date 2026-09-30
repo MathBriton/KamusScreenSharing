@@ -12,8 +12,8 @@ narrativa. A especificação completa do projeto está no `CLAUDE.md`.
 - Branch principal: `main`. **Pendente**: marcá-la como padrão no GitHub (Settings → Branches); depois
   disso a branch antiga `claude/iniciar-projeto-n6nhpb` (mesmo conteúdo) pode ser apagada.
 - Tudo verde: `npm run typecheck`, `npm run build` e **11 testes E2E** (`npm run test:e2e`).
-- **UI repaginada** (dark industrial, verde-limão) seguindo `UI/README.md`; protótipo em
-  `UI/referencias/prototipo.webp`.
+- **UI repaginada** (dark industrial, verde-limão) seguindo `web/src/UI/README.md`; protótipo em
+  `web/src/UI/referencias/prototipo.webp`.
 - **Ainda não está em produção**: a VPS não foi contratada. Sugestões já discutidas: Oracle Cloud Free
   Tier (São Paulo/Vinhedo, ARM) ou Vultr/Linode São Paulo (2 GB). Guia em `deploy/README.md`.
 - Deploy automático pronto, mas **desligado** até configurar a variável `DEPLOY_ENABLED=true` e os
@@ -80,6 +80,7 @@ Pendências técnicas pequenas:
 
 ## Histórico
 
+- **2026-09-30 · Claude Code**: pasta `UI/` movida para `web/src/UI/` (referências atualizadas).
 - **2026-09-30 · Claude Code**: repaginação da UI (pasta `UI/` com spec, tokens e protótipo; tema
   escuro fixo com Inter/JetBrains Mono; barra superior com LIVE, código e métricas; cards de
   transmissão; Grade/Foco; sidebar com conexão e `1080p · FPS`; barra inferior; trocar tela sem

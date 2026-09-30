@@ -1,7 +1,7 @@
 # UI — repaginação da interface
 
 Pasta de referência do design do Kamus. Tudo o que define **como a interface deve parecer e se
-comportar** fica aqui; o código continua em `web/`.
+comportar** fica aqui, junto do código do frontend (`web/src/`).
 
 | Arquivo | Conteúdo |
 | --- | --- |

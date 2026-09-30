@@ -1,6 +1,6 @@
 # Tokens de design
 
-Implementados como variáveis CSS em `web/src/index.css` (mapeadas para os nomes do shadcn/ui).
+Implementados como variáveis CSS em `web/src/index.css` (arquivo vizinho: `../index.css`) (mapeadas para os nomes do shadcn/ui).
 O tema é **somente escuro**.
 
 ## Cores

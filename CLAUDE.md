@@ -20,8 +20,8 @@ Princípios que guiam as decisões:
 - **Nada para instalar**: tudo no navegador; celular só assiste (limitação dos navegadores móveis).
 - **Interface em português (pt-BR)**, inclusive mensagens de erro da API e comentários do código.
 - **Design**: dark industrial minimalista com toque de gaming UI, uma única cor de destaque (verde-limão)
-  e vermelho só para LIVE/parar/sair. A especificação visual e os tokens ficam em **`UI/`**
-  (`UI/README.md`, `UI/TOKENS.md`, protótipo em `UI/referencias/`).
+  e vermelho só para LIVE/parar/sair. A especificação visual e os tokens ficam em **`web/src/UI/`**
+  (`README.md`, `TOKENS.md` e o protótipo em `referencias/`).
 
 ## Funcionalidades implementadas
 
@@ -79,7 +79,7 @@ navegador ──POST /api/token──▶ server (Express) ──▶ JWT do LiveK
     `ParticipantsPanel`, `useMetrics` (ping, estatísticas WebRTC, cronômetros).
   - `stage/`: `Stage` (grade/foco), `StreamCard` (card com cabeçalho, menu e zoom), `useZoom`,
     `useScreenShares`. `chat/`: chat persistente. `layout/`: topbar da home e Amigos.
-    `components/ui/`: componentes shadcn. `index.css`: tokens do tema (ver `UI/TOKENS.md`).
+    `components/ui/`: componentes shadcn. `UI/`: especificação visual. `index.css`: tokens do tema (ver `web/src/UI/TOKENS.md`).
 - **deploy/**: Compose de produção, Caddyfile, template do `livekit.yaml`, `setup.sh`.
 - **e2e/**: suíte Playwright. **.github/workflows/ci.yml**: CI em todo push + deploy opcional na `main`.
 
@@ -111,7 +111,7 @@ navegador ──POST /api/token──▶ server (Express) ──▶ JWT do LiveK
   **API + SQLite**. Preferências do usuário em `localStorage` sempre dentro de `try/catch`.
 - Permissões do token: todos podem publicar **só** `SCREEN_SHARE`/`SCREEN_SHARE_AUDIO`. Ao transmitir,
   o participante publica os atributos `role=presenter` e `fps=<preset>`; ao parar, volta a `viewer`.
-- Visual: siga `UI/TOKENS.md` (sem gradientes, blur ou neon; verde só para estado ativo; vermelho só
+- Visual: siga `web/src/UI/TOKENS.md` (sem gradientes, blur ou neon; verde só para estado ativo; vermelho só
   para LIVE/parar/sair; métricas e códigos em fonte mono).
 - Toda mudança de comportamento deve vir com teste em `e2e/` e passar em `npm run typecheck` e
   `npm run test:e2e`.

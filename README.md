@@ -21,7 +21,7 @@ link, sem instalar nada.
 - **Salas fixas** (`/s/amigos`), salas recentes e menu **Amigos** (quem está online e onde).
 - **Celular** assiste (navegadores móveis não compartilham tela).
 
-O visual segue a especificação em [`UI/`](UI/README.md): dark industrial minimalista, uma única cor
+O visual segue a especificação em [`web/src/UI/`](web/src/UI/README.md): dark industrial minimalista, uma única cor
 de destaque e vermelho só para LIVE, parar e sair.
 
 A mídia passa por um **SFU** ([LiveKit](https://livekit.io)): o apresentador envia um único fluxo
@@ -43,7 +43,6 @@ navegador ──POST /api/token────────────────�
 | `web/`     | Frontend em React + Vite + TypeScript, UI com [shadcn/ui](https://ui.shadcn.com) + Tailwind v4 (`livekit-client`) |
 | `e2e/`     | Testes de ponta a ponta com Playwright |
 | `deploy/`  | Produção numa VPS: Docker Compose, Caddy, LiveKit com TURN |
-| `UI/`      | Especificação visual, tokens de design e protótipo |
 
 Documentação para quem desenvolve (pessoas e agentes de IA): [`CLAUDE.md`](CLAUDE.md) (especificação),
 [`MEMORY.md`](MEMORY.md) (estado atual e decisões) e [`AGENTS.md`](AGENTS.md) (Codex).
