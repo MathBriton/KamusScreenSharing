@@ -1,0 +1,21 @@
+{
+	email {$ACME_EMAIL}
+	# Fixa o Let's Encrypt para o certificado ficar sempre no mesmo caminho,
+	# que é lido pelo TURN do LiveKit (ver livekit.yaml).
+	acme_ca https://acme-v02.api.letsencrypt.org/directory
+}
+
+{$DOMAIN} {
+	encode zstd gzip
+
+	# Sinalização do LiveKit (o livekit-client conecta em wss://DOMINIO/rtc).
+	@livekit path /rtc /rtc/* /twirp/*
+	handle @livekit {
+		reverse_proxy 127.0.0.1:7880
+	}
+
+	# API de tokens + frontend.
+	handle {
+		reverse_proxy 127.0.0.1:3001
+	}
+}

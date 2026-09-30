@@ -1,0 +1,23 @@
+# Gerado por setup.sh a partir de livekit.yaml.template. Não versionar.
+port: 7880
+log_level: info
+
+rtc:
+  tcp_port: 7881
+  # Uma única porta UDP para toda a mídia (simplifica o firewall).
+  udp_port: 7882
+  # Descobre o IP público da VPS via STUN.
+  use_external_ip: true
+
+turn:
+  enabled: true
+  domain: __DOMAIN__
+  # TURN/TLS: atravessa redes que bloqueiam UDP (empresas, hotéis, 4G restrito).
+  tls_port: 5349
+  # TURN/UDP
+  udp_port: 3478
+  cert_file: /caddy-data/caddy/certificates/acme-v02.api.letsencrypt.org-directory/__DOMAIN__/__DOMAIN__.crt
+  key_file: /caddy-data/caddy/certificates/acme-v02.api.letsencrypt.org-directory/__DOMAIN__/__DOMAIN__.key
+
+keys:
+  __API_KEY__: __API_SECRET__

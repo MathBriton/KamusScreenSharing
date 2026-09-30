@@ -40,6 +40,6 @@ if (existsSync(webDist)) {
   });
 }
 
-app.listen(config.port, () => {
-  console.log(`Servidor ouvindo em http://localhost:${config.port}`);
+app.listen(config.port, config.host, () => {
+  console.log(`Servidor ouvindo em http://${config.host}:${config.port}`);
 });

@@ -8,6 +8,9 @@ import {
   type RemoteTrackPublication,
 } from 'livekit-client';
 import { fetchToken, type Role } from './api';
+import { Chat } from './Chat';
+import { ParticipantList } from './ParticipantList';
+import { useParticipants } from './participants';
 
 interface Props {
   room: string;
@@ -23,12 +26,10 @@ export function RoomView({ room: roomName, role, name, onLeave }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [sharing, setSharing] = useState(false);
   const [hasStream, setHasStream] = useState(false);
-  const [viewers, setViewers] = useState(0);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const video = videoRef.current!;
-    const updateViewers = () => setViewers(room.remoteParticipants.size);
 
     const attachIfScreen = (track: RemoteTrack, pub: RemoteTrackPublication) => {
       if (pub.source === Track.Source.ScreenShare) {
@@ -48,10 +49,8 @@ export function RoomView({ room: roomName, role, name, onLeave }: Props) {
 
     room
       .on(RoomEvent.ConnectionStateChanged, setState)
-      .on(RoomEvent.TrackSubscribed, (track, pub) => attachIfScreen(track, pub))
-      .on(RoomEvent.TrackUnsubscribed, (track, pub) => detach(track, pub))
-      .on(RoomEvent.ParticipantConnected, updateViewers)
-      .on(RoomEvent.ParticipantDisconnected, updateViewers)
+      .on(RoomEvent.TrackSubscribed, attachIfScreen)
+      .on(RoomEvent.TrackUnsubscribed, detach)
       .on(RoomEvent.LocalTrackUnpublished, onLocalUnpublished);
 
     let cancelled = false;
@@ -60,7 +59,6 @@ export function RoomView({ room: roomName, role, name, onLeave }: Props) {
         const { token, url } = await fetchToken(roomName, name, role);
         if (cancelled) return;
         await room.connect(url, token);
-        updateViewers();
       } catch (err) {
         if (!cancelled) setError(err instanceof Error ? err.message : String(err));
       }
@@ -68,7 +66,11 @@ export function RoomView({ room: roomName, role, name, onLeave }: Props) {
 
     return () => {
       cancelled = true;
-      room.removeAllListeners();
+      room
+        .off(RoomEvent.ConnectionStateChanged, setState)
+        .off(RoomEvent.TrackSubscribed, attachIfScreen)
+        .off(RoomEvent.TrackUnsubscribed, detach)
+        .off(RoomEvent.LocalTrackUnpublished, onLocalUnpublished);
       room.disconnect();
     };
   }, [room, roomName, name, role]);
@@ -96,6 +98,10 @@ export function RoomView({ room: roomName, role, name, onLeave }: Props) {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const participants = useParticipants(room);
+  const viewers = participants.filter((p) => p.role === 'viewer').length;
+  const connected = state === ConnectionState.Connected;
+
   const showVideo = role === 'presenter' ? sharing : hasStream;
 
   return (
@@ -105,14 +111,14 @@ export function RoomView({ room: roomName, role, name, onLeave }: Props) {
           <strong>Sala {roomName}</strong>
           <span className={`status status-${state}`}>{state}</span>
           <span className="muted">
-            {role === 'presenter' ? `${viewers} espectador(es)` : 'Você está assistindo'}
+            {viewers === 1 ? '1 espectador' : `${viewers} espectadores`}
           </span>
         </div>
         <div className="actions">
           {role === 'presenter' && (
             <>
               <button onClick={copyLink}>{copied ? 'Link copiado!' : 'Copiar link'}</button>
-              <button onClick={toggleShare} disabled={state !== ConnectionState.Connected}>
+              <button onClick={toggleShare} disabled={!connected}>
                 {sharing ? 'Parar compartilhamento' : 'Compartilhar tela'}
               </button>
             </>
@@ -125,16 +131,23 @@ export function RoomView({ room: roomName, role, name, onLeave }: Props) {
 
       {error && <p className="error">{error}</p>}
 
-      <section className="stage">
-        <video ref={videoRef} autoPlay playsInline muted={role === 'presenter'} hidden={!showVideo} />
-        {!showVideo && (
-          <p className="placeholder">
-            {role === 'presenter'
-              ? 'Clique em "Compartilhar tela" para começar a transmitir.'
-              : 'Aguardando o apresentador compartilhar a tela…'}
-          </p>
-        )}
-      </section>
+      <div className="room-body">
+        <section className="stage">
+          <video ref={videoRef} autoPlay playsInline muted={role === 'presenter'} hidden={!showVideo} />
+          {!showVideo && (
+            <p className="placeholder">
+              {role === 'presenter'
+                ? 'Clique em "Compartilhar tela" para começar a transmitir.'
+                : 'Aguardando o apresentador compartilhar a tela…'}
+            </p>
+          )}
+        </section>
+
+        <aside className="sidebar">
+          <ParticipantList participants={participants} />
+          <Chat room={room} connected={connected} />
+        </aside>
+      </div>
     </main>
   );
 }

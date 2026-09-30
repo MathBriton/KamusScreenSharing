@@ -1,0 +1,46 @@
+# Produção: uma VPS com Caddy (HTTPS) + LiveKit (SFU com TURN embutido) + app.
+# Tudo em network_mode: host, como o LiveKit recomenda para WebRTC (evita NAT
+# do Docker e mapear faixas de portas UDP).
+#
+# Antes de subir, rode ./setup.sh para gerar .env e livekit.yaml.
+name: kamus
+
+services:
+  app:
+    build: ..
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      HOST: 127.0.0.1
+      PORT: 3001
+      LIVEKIT_URL: wss://${DOMAIN}
+      LIVEKIT_API_KEY: ${LIVEKIT_API_KEY}
+      LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET}
+
+  livekit:
+    image: livekit/livekit-server:v1.9.1
+    command: --config /etc/livekit.yaml
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ./livekit.yaml:/etc/livekit.yaml:ro
+      # Certificado emitido pelo Caddy, usado pelo TURN/TLS.
+      - caddy_data:/caddy-data:ro
+    depends_on:
+      - caddy
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      DOMAIN: ${DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:

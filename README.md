@@ -1,7 +1,8 @@
 # Kamus Screen Sharing
 
-Compartilhamento de tela **1-para-muitos** direto no navegador. Quem apresenta cria uma sala e
-compartilha a tela; os espectadores entram pelo link, sem instalar nada.
+Compartilhamento de tela **1-para-muitos** direto no navegador, para uso entre amigos. Quem
+apresenta cria uma sala e compartilha a tela; os espectadores entram pelo link, sem instalar
+nada. A sala tem chat e lista de quem está presente.
 
 A mídia passa por um **SFU** ([LiveKit](https://livekit.io)): o apresentador envia um único fluxo
 e o servidor o distribui para todos os espectadores. Assim o número de espectadores não fica
@@ -56,9 +57,9 @@ npm run build
 npm start                  # serve API + frontend em http://localhost:3001
 ```
 
-Em produção, configure `LIVEKIT_URL`, `LIVEKIT_API_KEY` e `LIVEKIT_API_SECRET` apontando para
-o seu servidor LiveKit (auto-hospedado ou LiveKit Cloud). Use `wss://` e HTTPS:
-`getDisplayMedia` só funciona em contexto seguro (ou em `localhost`).
+Para colocar no ar numa VPS (Docker + Caddy + LiveKit com TURN embutido), siga o
+[guia de deploy](deploy/README.md). É preciso HTTPS: `getDisplayMedia` só funciona em
+contexto seguro (ou em `localhost`).
 
 ## Scripts
 
@@ -70,9 +71,8 @@ o seu servidor LiveKit (auto-hospedado ou LiveKit Cloud). Use `wss://` e HTTPS:
 | `npm run typecheck` | Checagem de tipos em todos os pacotes             |
 | `npm run livekit`   | Sobe o LiveKit via Docker Compose                 |
 
-## Próximos passos
+## Observações
 
-- [ ] Autenticação: hoje qualquer pessoa pode pedir um token de apresentador
-- [ ] Chat da sala (via data channel do LiveKit)
-- [ ] Lista de espectadores conectados
-- [ ] Deploy (LiveKit Cloud ou auto-hospedado com TURN)
+- Não há autenticação: quem tem o link da sala entra. O projeto é pensado para um grupo
+  pequeno de amigos, e o código da sala (aleatório) funciona como "senha".
+- O chat não guarda histórico: quem entra depois só vê as mensagens a partir da entrada.

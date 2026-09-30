@@ -14,6 +14,8 @@ export async function createToken(room: string, identity: string, name: string, 
     identity,
     name,
     ttl: '6h',
+    // O papel fica visível para os outros participantes (lista de presentes).
+    attributes: { role },
   });
 
   token.addGrant({
