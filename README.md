@@ -1,8 +1,23 @@
 # Kamus Screen Sharing
 
-Compartilhamento de tela **1-para-muitos** direto no navegador, para uso entre amigos. Quem
-apresenta cria uma sala e compartilha a tela; os espectadores entram pelo link, sem instalar
-nada. A sala tem chat e lista de quem está presente.
+Compartilhamento de tela **1-para-muitos** direto no navegador, para uso entre amigos (a voz
+fica no Discord). Quem apresenta cria uma sala e compartilha a tela; os espectadores entram pelo
+link, sem instalar nada.
+
+## Recursos
+
+- **Salas fixas do grupo**: `/s/amigos` é sempre o mesmo link; a home lembra as salas recentes.
+  Quem abre o link entra assistindo e pode clicar em **Apresentar** quando ninguém estiver
+  transmitindo, sem reconectar.
+- **Qualidade escolhida por quem apresenta**: Texto/código (1080p 15 fps), Equilibrado
+  (1080p 30 fps), Jogo/vídeo (720p 60 fps) e Máxima (1080p 60 fps). A troca vale na hora,
+  sem abrir o seletor de tela de novo.
+- **Áudio da transmissão opcional** e desligado por padrão (com o Discord aberto, as vozes
+  sairiam em dobro).
+- **Controles de quem assiste**: tela cheia (botão, duplo clique ou tecla **F**) e janela
+  flutuante picture-in-picture (botão ou tecla **P**).
+- **Avisos** de entrada, saída e início/fim de transmissão, em notificações e no chat.
+- Chat e lista de participantes.
 
 A mídia passa por um **SFU** ([LiveKit](https://livekit.io)): o apresentador envia um único fluxo
 e o servidor o distribui para todos os espectadores. Assim o número de espectadores não fica
@@ -46,8 +61,8 @@ npm run livekit            # ou: livekit-server --dev
 npm run dev
 ```
 
-Abra http://localhost:5173, clique em **Criar sala e compartilhar** e depois em
-**Compartilhar tela**. Use **Copiar link** e abra o link em outra aba ou em outro navegador
+Abra http://localhost:5173, clique em **Criar sala e compartilhar** (ou dê um nome à sala)
+e depois em **Compartilhar tela**. Use **Copiar link** e abra o link em outra aba ou em outro navegador
 para assistir.
 
 ## Build de produção
@@ -85,6 +100,8 @@ O tema (claro/escuro, seguindo o sistema) está nas variáveis CSS de `web/src/i
 
 ## Observações
 
-- Não há autenticação: quem tem o link da sala entra. O projeto é pensado para um grupo
-  pequeno de amigos, e o código da sala (aleatório) funciona como "senha".
+- Não há autenticação: quem tem o link da sala entra e pode apresentar. O projeto é pensado
+  para um grupo pequeno de amigos. Salas com nome simples (`/s/amigos`) são fáceis de
+  adivinhar; se isso importar, use um nome menos óbvio ou o código aleatório.
+- Os participantes só podem publicar compartilhamento de tela (nada de câmera ou microfone).
 - O chat não guarda histórico: quem entra depois só vê as mensagens a partir da entrada.

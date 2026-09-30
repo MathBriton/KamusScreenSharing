@@ -1,30 +1,50 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Role } from './api';
 import { Home } from './Home';
 import { RoomView } from './RoomView';
+import {
+  forgetRoom,
+  loadRecentRooms,
+  readSessionFromUrl,
+  rememberRoom,
+  sessionUrl,
+  type Session,
+} from './rooms';
 
-interface Session {
-  room: string;
-  role: Role;
-}
-
-function readSessionFromUrl(): Session | null {
-  const params = new URLSearchParams(window.location.search);
-  const room = params.get('sala');
-  if (!room) return null;
-  return { room, role: params.get('papel') === 'apresentador' ? 'presenter' : 'viewer' };
+function loadName(): string {
+  try {
+    return localStorage.getItem('kamus:name') ?? '';
+  } catch {
+    return '';
+  }
 }
 
 export function App() {
   const [session, setSession] = useState<Session | null>(readSessionFromUrl);
-  const [name, setName] = useState(() => localStorage.getItem('kamus:name') ?? '');
+  const [name, setName] = useState(loadName);
+  const [recentRooms, setRecentRooms] = useState(loadRecentRooms);
+
+  useEffect(() => {
+    // Converte links antigos (?sala=) para o formato /s/<sala>.
+    const current = readSessionFromUrl();
+    if (current && window.location.pathname + window.location.search !== sessionUrl(current)) {
+      window.history.replaceState(null, '', sessionUrl(current));
+    }
+    const onPop = () => setSession(readSessionFromUrl());
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
 
   const enter = (room: string, role: Role, displayName: string) => {
-    localStorage.setItem('kamus:name', displayName);
+    try {
+      localStorage.setItem('kamus:name', displayName);
+    } catch {
+      // Sem armazenamento local: pede o nome de novo na próxima visita.
+    }
+    rememberRoom(room);
+    setRecentRooms(loadRecentRooms());
     setName(displayName);
-    const params = new URLSearchParams({ sala: room });
-    if (role === 'presenter') params.set('papel', 'apresentador');
-    window.history.pushState(null, '', `?${params}`);
+    window.history.pushState(null, '', sessionUrl({ room, role }));
     setSession({ room, role });
   };
 
@@ -33,11 +53,35 @@ export function App() {
     setSession(null);
   };
 
-  if (!session) {
-    return <Home initialName={name} onEnter={enter} />;
+  const forget = (room: string) => {
+    forgetRoom(room);
+    setRecentRooms(loadRecentRooms());
+  };
+
+  // Trocar de papel não reconecta: só atualiza o link na barra de endereço.
+  const changeRole = (role: Role) => {
+    if (session) window.history.replaceState(null, '', sessionUrl({ room: session.room, role }));
+  };
+
+  if (!session || !name) {
+    return (
+      <Home
+        initialName={name}
+        initialRoom={session?.room}
+        recentRooms={recentRooms}
+        onEnter={enter}
+        onForgetRoom={forget}
+      />
+    );
   }
-  if (!name) {
-    return <Home initialName="" initialRoom={session.room} onEnter={enter} />;
-  }
-  return <RoomView room={session.room} role={session.role} name={name} onLeave={leave} />;
+  return (
+    <RoomView
+      key={session.room}
+      room={session.room}
+      initialRole={session.role}
+      name={name}
+      onRoleChange={changeRole}
+      onLeave={leave}
+    />
+  );
 }

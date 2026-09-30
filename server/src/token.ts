@@ -1,4 +1,4 @@
-import { AccessToken } from 'livekit-server-sdk';
+import { AccessToken, TrackSource } from 'livekit-server-sdk';
 import { config } from './config.js';
 
 export type Role = 'presenter' | 'viewer';
@@ -14,7 +14,7 @@ export async function createToken(room: string, identity: string, name: string, 
     identity,
     name,
     ttl: '6h',
-    // O papel fica visível para os outros participantes (lista de presentes).
+    // Papel inicial, visível para os outros participantes (lista de presentes).
     attributes: { role },
   });
 
@@ -22,9 +22,13 @@ export async function createToken(room: string, identity: string, name: string, 
     room,
     roomJoin: true,
     canSubscribe: true,
-    // Só quem apresenta pode publicar mídia; espectadores apenas assistem.
-    canPublish: role === 'presenter',
+    // Qualquer participante pode assumir a apresentação (salas fixas do grupo),
+    // mas só compartilhamento de tela: nada de câmera ou microfone.
+    canPublish: true,
+    canPublishSources: [TrackSource.SCREEN_SHARE, TrackSource.SCREEN_SHARE_AUDIO],
     canPublishData: true,
+    // Permite trocar o próprio papel (atributo "role") sem reconectar.
+    canUpdateOwnMetadata: true,
   });
 
   return token.toJwt();
