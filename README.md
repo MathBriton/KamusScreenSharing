@@ -6,24 +6,23 @@ link, sem instalar nada.
 
 ## Recursos
 
-- **Topbar com menu Amigos**: quem está online agora (em qual sala, se está ao vivo, botão
-  **Entrar**) e quem foi visto recentemente.
-- **Salas fixas do grupo**: `/s/amigos` é sempre o mesmo link; a home lembra as salas recentes.
-  Quem abre o link entra assistindo e pode clicar em **Apresentar** a qualquer momento.
-- **Várias transmissões ao mesmo tempo**: cada espectador escolhe qual ver (modo **Foco**, com as
-  outras em miniatura) ou vê todas **lado a lado**.
-- **Qualidade escolhida por quem apresenta**: Texto/código (1080p 15 fps), Equilibrado
-  (1080p 30 fps), Jogo/vídeo (720p 60 fps) e Máxima (1080p 60 fps), trocada na hora.
-- **Áudio da transmissão opcional** e desligado por padrão (com o Discord aberto, as vozes
-  sairiam em dobro).
-- **Para quem assiste**: **zoom** (roda do mouse, pinça, arrastar, teclas `+` `-` `0`), tela cheia
-  (tecla **F** ou duplo clique) e janela flutuante picture-in-picture (tecla **P**).
-- **Chat com histórico** (quem chega depois vê a conversa): links clicáveis, **colar ou arrastar
-  prints**, prévia de links de GIF/imagem e abas **Imagens** e **Links** com tudo o que foi
-  compartilhado. O histórico é guardado por 90 dias.
-- **Avisos** de entrada, saída e início/fim de transmissão.
-- **Celular**: navegadores de celular não conseguem compartilhar a tela; o app explica isso e
-  entra só para assistir.
+- **Várias telas ao mesmo tempo**: todos podem clicar em **Transmitir**. Visualização em **Grade**
+  (adaptável ao número de transmissões) ou **Foco** (uma grande e as outras em miniatura).
+  **Compartilhar tela** troca a janela transmitida sem interromper quem assiste.
+- **Informações técnicas discretas** na barra superior: LIVE, duração da sessão, código da sala,
+  ping, conexão, resolução, FPS e bitrate da transmissão selecionada.
+- **Sidebar** com participantes (transmitindo ou não, `1080p · 60 FPS`, conexão) e chat.
+- **Qualidade escolhida por quem transmite** (Texto 1080p15, Equilibrado 1080p30, Jogo 720p60,
+  Máxima 1080p60), trocada na hora. Áudio da transmissão opcional e desligado por padrão.
+- **Para quem assiste**: zoom (roda, pinça, arrastar, `+` `-` `0`), tela cheia (`F`), janela
+  flutuante (`P`), `G` alterna Grade/Foco e `1`–`9` escolhe a transmissão.
+- **Chat com histórico** (90 dias): links clicáveis, colar/arrastar prints, prévia de GIFs e abas
+  **Imagens** e **Links**.
+- **Salas fixas** (`/s/amigos`), salas recentes e menu **Amigos** (quem está online e onde).
+- **Celular** assiste (navegadores móveis não compartilham tela).
+
+O visual segue a especificação em [`UI/`](UI/README.md): dark industrial minimalista, uma única cor
+de destaque e vermelho só para LIVE, parar e sair.
 
 A mídia passa por um **SFU** ([LiveKit](https://livekit.io)): o apresentador envia um único fluxo
 e o servidor o distribui para todos os espectadores. Assim o número de espectadores não fica
@@ -44,6 +43,7 @@ navegador ──POST /api/token────────────────�
 | `web/`     | Frontend em React + Vite + TypeScript, UI com [shadcn/ui](https://ui.shadcn.com) + Tailwind v4 (`livekit-client`) |
 | `e2e/`     | Testes de ponta a ponta com Playwright |
 | `deploy/`  | Produção numa VPS: Docker Compose, Caddy, LiveKit com TURN |
+| `UI/`      | Especificação visual, tokens de design e protótipo |
 
 Documentação para quem desenvolve (pessoas e agentes de IA): [`CLAUDE.md`](CLAUDE.md) (especificação),
 [`MEMORY.md`](MEMORY.md) (estado atual e decisões) e [`AGENTS.md`](AGENTS.md) (Codex).
@@ -67,8 +67,8 @@ npm run livekit:local      # ou, com Docker: npm run livekit
 npm run dev
 ```
 
-Abra http://localhost:5173, clique em **Criar sala e compartilhar** (ou dê um nome à sala)
-e depois em **Compartilhar tela**. Use **Copiar link** e abra o link em outra aba ou em outro navegador
+Abra http://localhost:5173, clique em **Criar sala** (ou dê um nome à sala) e depois em
+**Transmitir**. Use **Copiar link** e abra o link em outra aba ou em outro navegador
 para assistir.
 
 ## Build de produção
@@ -108,7 +108,7 @@ O tema (claro/escuro, seguindo o sistema) está nas variáveis CSS de `web/src/i
 
 ## Testes e CI
 
-`npm run test:e2e` roda a suíte Playwright em `e2e/`: apresentar e assistir, qualidade ao vivo,
+`npm run test:e2e` roda a suíte Playwright em `e2e/`: transmitir e assistir, trocar de tela sem interromper, qualidade ao vivo, métricas,
 várias transmissões e zoom, chat com histórico e imagens, menu Amigos, salas fixas e o modo
 celular. Na primeira vez, instale o navegador com `npx playwright install chromium`.
 
@@ -118,7 +118,7 @@ os testes em todo push. Na `main`, pode também publicar na VPS automaticamente:
 
 ## Observações
 
-- Não há autenticação: quem tem o link da sala entra e pode apresentar. O projeto é pensado
+- Não há autenticação: quem tem o link da sala entra e pode transmitir. O projeto é pensado
   para um grupo pequeno de amigos. Salas com nome simples (`/s/amigos`) são fáceis de
   adivinhar; se isso importar, use um nome menos óbvio ou o código aleatório.
 - Os participantes só podem publicar compartilhamento de tela (nada de câmera ou microfone).

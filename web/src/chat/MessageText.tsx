@@ -23,7 +23,7 @@ export function MessageText({ text, onOpenImage }: Props) {
               href={part.url}
               target="_blank"
               rel="noopener noreferrer nofollow"
-              className="text-blue-600 underline underline-offset-2 hover:no-underline dark:text-blue-400"
+              className="text-primary underline underline-offset-2 hover:no-underline"
             >
               {part.url}
             </a>

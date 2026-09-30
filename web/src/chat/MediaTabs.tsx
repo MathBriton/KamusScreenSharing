@@ -64,7 +64,7 @@ export function LinksTab({ links }: { links: SharedLink[] }) {
               <ExternalLink className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
               <span className="grid min-w-0 gap-0.5">
                 <span className="truncate text-sm font-medium">{hostOf(l.url)}</span>
-                <span className="truncate text-xs text-blue-600 group-hover:underline dark:text-blue-400">{l.url}</span>
+                <span className="truncate text-xs text-primary group-hover:underline">{l.url}</span>
                 <span className="text-xs text-muted-foreground">
                   {l.author} · {formatTime(l.createdAt)}
                 </span>

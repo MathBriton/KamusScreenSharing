@@ -1,30 +1,37 @@
 import { useEffect, useState } from 'react';
-import { RoomEvent, type Participant, type Room } from 'livekit-client';
-import type { Role } from './api';
+import { ConnectionQuality, RoomEvent, Track, type Participant, type Room } from 'livekit-client';
 
 export interface ParticipantInfo {
   identity: string;
   name: string;
-  role: Role;
   isLocal: boolean;
   isSharing: boolean;
+  connection: ConnectionQuality;
+  /** Altura da transmissão (ex.: 1080), quando está transmitindo. */
+  height?: number;
+  /** FPS do preset escolhido por quem transmite (atributo "fps"). */
+  fps?: number;
 }
 
 function toInfo(p: Participant): ParticipantInfo {
+  const screen = p.getTrackPublication(Track.Source.ScreenShare);
+  const fps = Number(p.attributes.fps);
   return {
     identity: p.identity,
     name: p.name || p.identity,
-    role: p.attributes.role === 'presenter' ? 'presenter' : 'viewer',
     isLocal: p.isLocal,
     isSharing: p.isScreenShareEnabled,
+    connection: p.connectionQuality,
+    height: screen?.dimensions?.height,
+    fps: Number.isFinite(fps) && fps > 0 ? fps : undefined,
   };
 }
 
 function snapshot(room: Room): ParticipantInfo[] {
   const all = [room.localParticipant, ...room.remoteParticipants.values()].map(toInfo);
-  // Apresentadores primeiro, depois por nome.
+  // Quem transmite primeiro, depois por nome.
   return all.sort((a, b) =>
-    a.role === b.role ? a.name.localeCompare(b.name, 'pt-BR') : a.role === 'presenter' ? -1 : 1,
+    a.isSharing === b.isSharing ? a.name.localeCompare(b.name, 'pt-BR') : a.isSharing ? -1 : 1,
   );
 }
 
@@ -40,8 +47,10 @@ export function useParticipants(room: Room): ParticipantInfo[] {
       RoomEvent.ParticipantDisconnected,
       RoomEvent.ParticipantNameChanged,
       RoomEvent.ParticipantAttributesChanged,
+      RoomEvent.ConnectionQualityChanged,
       RoomEvent.TrackPublished,
       RoomEvent.TrackUnpublished,
+      RoomEvent.TrackSubscribed,
       RoomEvent.LocalTrackPublished,
       RoomEvent.LocalTrackUnpublished,
     ] as const;

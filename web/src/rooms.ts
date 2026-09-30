@@ -1,13 +1,6 @@
-import type { Role } from './api';
-
 const ROOM_NAME = /^[a-z0-9_-]{1,64}$/;
 const RECENT_KEY = 'kamus:recent-rooms';
 const MAX_RECENT = 5;
-
-export interface Session {
-  room: string;
-  role: Role;
-}
 
 /** "Amigos da Firma!" → "amigos-da-firma" (mesmas regras do servidor). */
 export function normalizeRoomName(input: string): string {
@@ -34,21 +27,14 @@ export function roomPath(room: string): string {
   return `/s/${encodeURIComponent(room)}`;
 }
 
-export function sessionUrl({ room, role }: Session): string {
-  return role === 'presenter' ? `${roomPath(room)}?apresentar` : roomPath(room);
-}
-
-export function readSessionFromUrl(): Session | null {
+/** Sala do link atual: /s/<sala> (ou o formato antigo ?sala=). */
+export function readRoomFromUrl(): string | null {
   const { pathname, search } = window.location;
-  const params = new URLSearchParams(search);
   const match = pathname.match(/^\/s\/([^/]+)\/?$/);
-  // Aceita também o formato antigo: /?sala=xxx&papel=apresentador
-  const raw = match ? decodeURIComponent(match[1]) : params.get('sala');
+  const raw = match ? decodeURIComponent(match[1]) : new URLSearchParams(search).get('sala');
   if (!raw) return null;
   const room = normalizeRoomName(raw);
-  if (!isValidRoomName(room)) return null;
-  const presenter = params.has('apresentar') || params.get('papel') === 'apresentador';
-  return { room, role: presenter ? 'presenter' : 'viewer' };
+  return isValidRoomName(room) ? room : null;
 }
 
 export function loadRecentRooms(): string[] {

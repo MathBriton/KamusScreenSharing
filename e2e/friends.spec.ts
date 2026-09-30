@@ -20,14 +20,15 @@ test('menu Amigos: quem está online, ao vivo, e entrar na sala', async ({ brows
 
   await anaItem.getByRole('button', { name: 'Entrar' }).click();
   await expect(bruno).toHaveURL(new RegExp(`/s/${roomA}$`));
-  await expect(bruno.getByText('Conectado', { exact: true })).toBeVisible();
+  await expect(bruno.getByRole('heading', { name: `Sala ${roomA}` })).toBeVisible();
+  await expect(bruno.getByRole('status')).toHaveCount(0);
 });
 
 test('menu Amigos: vistos recentemente', async ({ browser }) => {
   const room = uniqueRoom('visto');
   const carla = await newPerson(browser);
   await joinRoom(carla, room, 'Carla Sumida');
-  await carla.getByRole('button', { name: 'Sair' }).click();
+  await carla.getByRole('button', { name: 'Sair da sala' }).click();
   await carla.context().close();
 
   const ana = await newPerson(browser);

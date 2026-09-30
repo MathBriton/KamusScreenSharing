@@ -8,19 +8,18 @@ export async function newPerson(browser: Browser, options: Parameters<Browser['n
   return context.newPage();
 }
 
-/** Abre o link da sala, informa o nome e espera conectar. */
-export async function joinRoom(page: Page, room: string, name: string, presenter = false) {
-  await page.goto(`/s/${room}${presenter ? '?apresentar' : ''}`);
+/** Abre o link da sala, informa o nome e espera conectar (barra de controles liberada). */
+export async function joinRoom(page: Page, room: string, name: string) {
+  await page.goto(`/s/${room}`);
   await page.getByLabel('Seu nome').fill(name);
   await page.getByRole('button', { name: 'Entrar na sala' }).click();
-  await expect(page.getByText('Conectado', { exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: `Sala ${room}` })).toBeVisible();
+  await expect(page.getByLabel('Mensagem')).toBeEnabled();
 }
 
 export async function startSharing(page: Page) {
-  const presentButton = page.getByRole('button', { name: 'Apresentar', exact: true });
-  if (await presentButton.isVisible()) await presentButton.click();
-  await page.getByRole('button', { name: 'Compartilhar tela' }).click();
-  await expect(page.getByRole('button', { name: 'Parar compartilhamento' })).toBeVisible();
+  await page.getByRole('button', { name: 'Transmitir', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Parar transmissão' })).toBeVisible();
 }
 
 /** Espera o vídeo de alguém estar tocando de verdade (com quadros). */
@@ -39,6 +38,11 @@ export async function sendChat(page: Page, text: string) {
   await chatInput(page).fill(text);
   await chatInput(page).press('Enter');
   await expect(messages(page).getByText(text.split(' ')[0], { exact: false }).last()).toBeVisible();
+}
+
+/** Tira o foco do chat para os atalhos de teclado funcionarem. */
+export async function blur(page: Page) {
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
 }
 
 /** Simula colar (Ctrl+V) uma imagem gerada num canvas. */

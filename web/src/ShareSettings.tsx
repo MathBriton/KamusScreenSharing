@@ -1,11 +1,10 @@
-import { Settings2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import type { ReactNode } from 'react';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
-import { QUALITY_PRESETS, getPreset, type QualityId } from './quality';
+import { QUALITY_PRESETS, type QualityId } from './quality';
 
 interface Props {
   quality: QualityId;
@@ -13,21 +12,18 @@ interface Props {
   audio: boolean;
   onAudioChange: (enabled: boolean) => void;
   sharing: boolean;
+  /** Botão que abre o painel. */
+  children: ReactNode;
 }
 
-export function ShareSettings({ quality, onQualityChange, audio, onAudioChange, sharing }: Props) {
+export function ShareSettings({ quality, onQualityChange, audio, onAudioChange, sharing, children }: Props) {
   return (
     <Popover>
-      <PopoverTrigger asChild>
-        <Button variant="outline" aria-label="Qualidade da transmissão">
-          <Settings2 />
-          <span className="hidden sm:inline">{getPreset(quality).label}</span>
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent align="end" className="w-80">
+      <PopoverTrigger asChild>{children}</PopoverTrigger>
+      <PopoverContent align="center" side="top" className="w-80">
         <div className="grid gap-3">
           <div>
-            <h4 className="font-medium">Qualidade</h4>
+            <h4 className="font-medium">Qualidade da transmissão</h4>
             <p className="text-sm text-muted-foreground">
               {sharing ? 'Aplicada na hora, sem reiniciar.' : 'Vale para o próximo compartilhamento.'}
             </p>

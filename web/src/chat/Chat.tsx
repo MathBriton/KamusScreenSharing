@@ -50,7 +50,7 @@ export function Chat({ room, roomName, token, connected }: Props) {
   return (
     <section
       className={cn(
-        'relative flex min-h-96 flex-1 flex-col p-4 md:min-h-0',
+        'relative flex min-h-96 flex-1 flex-col px-4 pt-2 pb-3 md:min-h-0',
         dragging && 'outline-2 -outline-offset-4 outline-primary outline-dashed',
       )}
       onDragOver={(e) => {
@@ -63,7 +63,7 @@ export function Chat({ room, roomName, token, connected }: Props) {
       onDrop={onDrop}
     >
       <Tabs value={tab} onValueChange={(v) => setTab(v as Tab)} className="min-h-0 flex-1">
-        <TabsList className="w-full">
+        <TabsList variant="line" className="w-full justify-start border-b">
           <TabsTrigger value="chat">Chat</TabsTrigger>
           <TabsTrigger value="images">Imagens{images.length > 0 && ` (${images.length})`}</TabsTrigger>
           <TabsTrigger value="links">Links{links.length > 0 && ` (${links.length})`}</TabsTrigger>
@@ -79,16 +79,23 @@ export function Chat({ room, roomName, token, connected }: Props) {
               )}
               {items.map((m) =>
                 m.kind === 'system' ? (
-                  <li key={m.id} className="text-xs text-muted-foreground italic">
-                    {m.text} · <time>{formatTime(m.createdAt)}</time>
+                  <li key={m.id} className="pl-9 text-xs text-subtle">
+                    {m.text} · <time className="font-mono tabular-nums">{formatTime(m.createdAt)}</time>
                   </li>
                 ) : (
-                  <li key={m.id} className="text-sm">
+                  <li key={m.id} className="flex gap-2.5 text-sm">
+                    <span
+                      className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-md bg-surface-2 text-[11px] font-semibold uppercase"
+                      aria-hidden
+                    >
+                      {m.author.charAt(0)}
+                    </span>
+                    <div className="min-w-0 flex-1">
                     <div className="flex items-baseline gap-2">
-                      <strong className={cn('font-medium', m.isLocal && 'text-blue-600 dark:text-blue-400')}>
+                      <strong className={cn('font-medium', m.isLocal && 'text-primary')}>
                         {m.isLocal ? 'Você' : m.author}
                       </strong>
-                      <time className="text-xs text-muted-foreground">{formatTime(m.createdAt)}</time>
+                      <time className="font-mono text-[11px] text-subtle tabular-nums">{formatTime(m.createdAt)}</time>
                     </div>
                     <MessageText
                       text={m.text}
@@ -113,6 +120,7 @@ export function Chat({ room, roomName, token, connected }: Props) {
                         ))}
                       </div>
                     )}
+                    </div>
                   </li>
                 ),
               )}

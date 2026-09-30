@@ -12,6 +12,8 @@ narrativa. A especificação completa do projeto está no `CLAUDE.md`.
 - Branch principal: `main`. **Pendente**: marcá-la como padrão no GitHub (Settings → Branches); depois
   disso a branch antiga `claude/iniciar-projeto-n6nhpb` (mesmo conteúdo) pode ser apagada.
 - Tudo verde: `npm run typecheck`, `npm run build` e **11 testes E2E** (`npm run test:e2e`).
+- **UI repaginada** (dark industrial, verde-limão) seguindo `UI/README.md`; protótipo em
+  `UI/referencias/prototipo.webp`.
 - **Ainda não está em produção**: a VPS não foi contratada. Sugestões já discutidas: Oracle Cloud Free
   Tier (São Paulo/Vinhedo, ARM) ou Vultr/Linode São Paulo (2 GB). Guia em `deploy/README.md`.
 - Deploy automático pronto, mas **desligado** até configurar a variável `DEPLOY_ENABLED=true` e os
@@ -41,6 +43,14 @@ Pendências técnicas pequenas:
 - **Qualquer um pode apresentar; várias transmissões ao mesmo tempo**. O papel é só um atributo
   (`role`) que o próprio participante altera (`canUpdateOwnMetadata`), sem reconectar.
 - **Áudio da transmissão desligado por padrão**: o grupo usa o Discord para voz.
+- **Mic e Áudio só visuais** (desabilitados, com dica): pedidos na spec de UI, mas a voz segue no
+  Discord. Reservam o lugar para uma voz futura.
+- **Transmitir × Compartilhar tela**: Transmitir inicia/para; Compartilhar tela troca a fonte com
+  `LocalTrack.replaceTrack` (sem interromper quem assiste). Não há mais papel escolhido na entrada nem
+  `?apresentar`: o atributo `role` acompanha a transmissão.
+- **Métricas**: ping = `room.engine.client.rtt`; resolução/FPS/bitrate = `getSenderStats`/
+  `getReceiverStats` da transmissão selecionada (grade pequena usa camada simulcast menor, então a
+  resolução exibida cai; é o dado real recebido).
 - **Chat pela API + LiveKit `sendData`** (tópico `chat`), não por text streams P2P: permite histórico
   e validação no servidor. Avisos de entrada/saída são só locais (não gravados).
 - **SQLite nativo (`node:sqlite`)**: sem dependência nativa para compilar. Emite ExperimentalWarning,
@@ -63,10 +73,17 @@ Pendências técnicas pequenas:
 - `room.numParticipants` da API do LiveKit atualiza com atraso: não usar para filtrar salas.
 - O registro do shadcn (`ui.shadcn.com`) pode estar bloqueado em sandboxes; ver `CLAUDE.md`.
 - O Chromium do sandbox do Claude Code é de outra versão do Playwright: usar `PW_CHROMIUM_PATH`.
+- Atalhos de teclado (F, G, P, 1–9, + - 0) são ignorados com o foco num campo de texto; nos testes,
+  tirar o foco antes (`blur()` em `e2e/helpers.ts`).
+- Seletor `text=Entrar na sala` também casa com o título da home convidada; use `getByRole('button')`.
 - TypeScript 7 (nativo) está em uso: `baseUrl` não existe mais; `paths` são relativos ao tsconfig.
 
 ## Histórico
 
+- **2026-09-30 · Claude Code**: repaginação da UI (pasta `UI/` com spec, tokens e protótipo; tema
+  escuro fixo com Inter/JetBrains Mono; barra superior com LIVE, código e métricas; cards de
+  transmissão; Grade/Foco; sidebar com conexão e `1080p · FPS`; barra inferior; trocar tela sem
+  interromper; aviso de reconexão; testes atualizados).
 - **2026-09-30 · Claude Code**: chat persistente (SQLite) com abas Imagens/Links, colar imagens e links
   clicáveis; várias transmissões simultâneas (Foco/Lado a lado) e zoom; topbar com menu Amigos; aviso
   e modo "só assistir" no celular; suíte Playwright (11 testes) e CI/CD no GitHub Actions;

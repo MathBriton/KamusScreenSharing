@@ -5,7 +5,7 @@ import express, { type ErrorRequestHandler } from 'express';
 import { cleanup, findUpload, listMessages, postMessage, saveUpload } from './chat.js';
 import { config } from './config.js';
 import { listFriends, touchPerson } from './friends.js';
-import { HttpError, authenticate } from './livekit.js';
+import { HttpError, authenticate, roomService } from './livekit.js';
 import { createToken, isValidRoomName, type Role } from './token.js';
 
 const app = express();
@@ -79,6 +79,14 @@ app.get('/api/uploads/:id', (req, res) => {
   });
   // O caminho é montado pelo servidor (UUID validado); DATA_DIR pode ter pastas com ponto.
   res.sendFile(upload.file, { dotfiles: 'allow' });
+});
+
+// Hora de criação da sala no LiveKit (duração da sessão na barra superior).
+app.get('/api/rooms/:room/info', async (req, res) => {
+  const room = roomParam(req.params.room);
+  await authenticate(req.headers.authorization, room);
+  const [info] = await roomService.listRooms([room]);
+  res.json({ createdAt: info ? Number(info.creationTime) * 1000 : null });
 });
 
 // ---- Amigos ----

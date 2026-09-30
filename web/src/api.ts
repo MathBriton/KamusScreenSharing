@@ -80,6 +80,10 @@ export const chatApi = {
   },
 };
 
+export async function fetchRoomInfo(room: string, token: string): Promise<{ createdAt: number | null }> {
+  return request(roomUrl(room, 'info'), {}, token);
+}
+
 export function fetchFriends(): Promise<{ online: OnlineFriend[]; recent: OfflineFriend[] }> {
   return request('/api/friends');
 }

@@ -19,17 +19,21 @@ Princípios que guiam as decisões:
 - **Simples de hospedar**: uma VPS com Docker Compose (Caddy + LiveKit com TURN embutido + app).
 - **Nada para instalar**: tudo no navegador; celular só assiste (limitação dos navegadores móveis).
 - **Interface em português (pt-BR)**, inclusive mensagens de erro da API e comentários do código.
+- **Design**: dark industrial minimalista com toque de gaming UI, uma única cor de destaque (verde-limão)
+  e vermelho só para LIVE/parar/sair. A especificação visual e os tokens ficam em **`UI/`**
+  (`UI/README.md`, `UI/TOKENS.md`, protótipo em `UI/referencias/`).
 
 ## Funcionalidades implementadas
 
 | Área | O que faz |
 | --- | --- |
 | Salas | Links fixos `/s/<sala>` (nome livre normalizado: "Amigos da Firma" → `amigos-da-firma`) ou código aleatório; salas recentes na home; links antigos `?sala=` convertidos. |
-| Transmissão | Via SFU (LiveKit). Qualquer participante pode apresentar; **várias transmissões simultâneas**. Qualidade escolhida por quem apresenta (Texto 1080p15, Equilibrado 1080p30, Jogo 720p60, Máxima 1080p60), trocada **ao vivo**. Áudio da transmissão opcional e **desligado por padrão** (evita eco com o Discord). |
-| Palco | Modo **Foco** (uma grande + miniaturas) ou **Lado a lado**; seletor de transmissão; **zoom** por vídeo (roda, pinça, arrastar, botões, teclas `+ - 0`); tela cheia (`F`, duplo clique); picture-in-picture (`P`). |
+| Transmissão | Via SFU (LiveKit). Qualquer participante clica em **Transmitir**; **várias transmissões simultâneas**. **Compartilhar tela** troca a janela/tela sem derrubar a transmissão (`replaceTrack`). Qualidade (Texto 1080p15, Equilibrado 1080p30, Jogo 720p60, Máxima 1080p60) em **Configurações**, trocada ao vivo. Áudio da transmissão opcional e desligado por padrão (evita eco com o Discord). |
+| Sala (layout) | Barra superior (sala, nº de pessoas, Amigos, LIVE + duração da sessão, código com copiar, métricas: ping, conexão, resolução, FPS, bitrate), palco, sidebar (participantes + chat) e barra inferior de controles (Grade/Foco, Mic e Áudio só visuais, Compartilhar tela, Transmitir, Alternar tela, Tela cheia, Configurações, Sair da sala). |
+| Palco | **Grade** adaptável (1×1, 2×1, 2×2, 3×2, 3×3…) ou **Foco** (selecionada grande + miniaturas). Cards com avatar, nome, LIVE, "Transmitindo", microfone (visual) e menu; borda verde na selecionada. **Zoom** por vídeo (roda, pinça, arrastar, `+ - 0`); tela cheia (`F`); picture-in-picture (`P`); `G` alterna Grade/Foco; `1–9` escolhe a transmissão. |
 | Chat | **Persistente** (SQLite, retenção de 90 dias): histórico para quem chega depois; links clicáveis; **colar/arrastar imagens**; prévia de links diretos de imagem/GIF; abas **Chat / Imagens / Links**; lightbox. |
-| Presença | Lista de participantes com "ao vivo"; avisos de entrada/saída/início/fim de transmissão (toast + linha no chat). |
-| Topbar | Barra fixa com o menu **Amigos**: quem está online (sala, ao vivo, botão Entrar) e "vistos recentemente". Novos menus entram em `web/src/layout/TopBar.tsx`. |
+| Presença | Participantes com transmitindo/parado, `1080p · 60 FPS`, microfone (visual) e qualidade da conexão; avisos de entrada/saída/início/fim de transmissão (toast + linha no chat). |
+| Topbar / Amigos | Na home: `web/src/layout/TopBar.tsx`. Na sala: `web/src/room/RoomTopBar.tsx`. Ambas com o menu **Amigos** (online com sala/ao vivo/Entrar e "vistos recentemente"). Novos menus entram nessas barras. |
 | Celular | Detecta navegador móvel e só permite assistir, explicando o motivo. |
 
 ## Comandos
@@ -70,9 +74,12 @@ navegador ──POST /api/token──▶ server (Express) ──▶ JWT do LiveK
     SVG proibido). `friends.ts`: presença (LiveKit) + "vistos" (tabela `people`). `db.ts`: schema SQLite
     (`node:sqlite`). `config.ts`: variáveis de ambiente.
 - **web/** (React 19, Vite, Tailwind v4, shadcn/ui, `livekit-client`)
-  - `App.tsx`: roteamento manual (`/s/<sala>`, `?apresentar`), `TopBar` + página.
-  - `RoomView.tsx`: conexão, papel, qualidade, cabeçalho da sala. `stage/`: palco, tiles, zoom.
-    `chat/`: chat persistente. `layout/`: topbar e Amigos. `components/ui/`: componentes shadcn.
+  - `App.tsx`: roteamento manual (`/s/<sala>`); home com `TopBar`, sala em tela cheia.
+  - `room/`: `RoomView` (conexão, transmissão, seleção, atalhos), `RoomTopBar`, `ControlBar`,
+    `ParticipantsPanel`, `useMetrics` (ping, estatísticas WebRTC, cronômetros).
+  - `stage/`: `Stage` (grade/foco), `StreamCard` (card com cabeçalho, menu e zoom), `useZoom`,
+    `useScreenShares`. `chat/`: chat persistente. `layout/`: topbar da home e Amigos.
+    `components/ui/`: componentes shadcn. `index.css`: tokens do tema (ver `UI/TOKENS.md`).
 - **deploy/**: Compose de produção, Caddyfile, template do `livekit.yaml`, `setup.sh`.
 - **e2e/**: suíte Playwright. **.github/workflows/ci.yml**: CI em todo push + deploy opcional na `main`.
 
@@ -85,6 +92,7 @@ navegador ──POST /api/token──▶ server (Express) ──▶ JWT do LiveK
 | POST | `/api/rooms/:room/messages` | token da sala | `{text, attachmentIds}`; grava e repassa pelo LiveKit |
 | POST | `/api/rooms/:room/uploads` | token da sala | corpo binário da imagem (máx. `MAX_UPLOAD_MB`) |
 | GET | `/api/uploads/:id` | — (UUID) | serve a imagem com `nosniff` + CSP `sandbox` |
+| GET | `/api/rooms/:room/info` | token da sala | `{createdAt}` (duração da sessão) |
 | GET | `/api/friends` | — | `{online, recent}` |
 
 ### Variáveis de ambiente (server)
@@ -101,12 +109,16 @@ navegador ──POST /api/token──▶ server (Express) ──▶ JWT do LiveK
   `github.com/shadcn-ui/ui/.../registry/new-york-v4/ui/` e troque o import `"cn"` por `"@/lib/utils"`).
 - Estado compartilhado da sala via **LiveKit** (atributos, text/data streams); estado persistente via
   **API + SQLite**. Preferências do usuário em `localStorage` sempre dentro de `try/catch`.
-- Permissões do token: todos podem publicar **só** `SCREEN_SHARE`/`SCREEN_SHARE_AUDIO`.
+- Permissões do token: todos podem publicar **só** `SCREEN_SHARE`/`SCREEN_SHARE_AUDIO`. Ao transmitir,
+  o participante publica os atributos `role=presenter` e `fps=<preset>`; ao parar, volta a `viewer`.
+- Visual: siga `UI/TOKENS.md` (sem gradientes, blur ou neon; verde só para estado ativo; vermelho só
+  para LIVE/parar/sair; métricas e códigos em fonte mono).
 - Toda mudança de comportamento deve vir com teste em `e2e/` e passar em `npm run typecheck` e
   `npm run test:e2e`.
 - Ao terminar uma sessão de trabalho, **atualize o MEMORY.md**.
 
 ## Fora de escopo (por decisão)
 
-Voz/microfone (usa-se o Discord), controle de volume do espectador, autenticação/contas,
+Voz/microfone de verdade (usa-se o Discord; os botões Mic/Áudio são só visuais, reservando o lugar),
+controle de volume do espectador, autenticação/contas,
 Kubernetes, controle remoto (exigiria app nativo).

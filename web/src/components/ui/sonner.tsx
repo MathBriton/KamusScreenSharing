@@ -8,10 +8,10 @@ import {
 import { Toaster as Sonner, type ToasterProps } from "sonner"
 
 const Toaster = ({ ...props }: ToasterProps) => {
-  // Adaptado: o projeto não usa next-themes; o tema segue o sistema (ver src/theme.ts).
+  // Adaptado: o projeto não usa next-themes; o tema é sempre escuro.
   return (
     <Sonner
-      theme="system"
+      theme="dark"
       className="toaster group"
       icons={{
         success: <CircleCheckIcon className="size-4" />,

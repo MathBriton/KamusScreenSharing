@@ -1,16 +1,8 @@
 import { useEffect, useState } from 'react';
-import type { Role } from './api';
 import { Home } from './Home';
 import { TopBar } from './layout/TopBar';
-import { RoomView } from './RoomView';
-import {
-  forgetRoom,
-  loadRecentRooms,
-  readSessionFromUrl,
-  rememberRoom,
-  sessionUrl,
-  type Session,
-} from './rooms';
+import { RoomView } from './room/RoomView';
+import { forgetRoom, loadRecentRooms, readRoomFromUrl, rememberRoom, roomPath } from './rooms';
 
 function loadName(): string {
   try {
@@ -21,84 +13,67 @@ function loadName(): string {
 }
 
 export function App() {
-  const [session, setSession] = useState<Session | null>(readSessionFromUrl);
+  const [room, setRoom] = useState<string | null>(readRoomFromUrl);
   const [name, setName] = useState(loadName);
   const [recentRooms, setRecentRooms] = useState(loadRecentRooms);
 
   useEffect(() => {
-    // Converte links antigos (?sala=) para o formato /s/<sala>.
-    const current = readSessionFromUrl();
-    if (current && window.location.pathname + window.location.search !== sessionUrl(current)) {
-      window.history.replaceState(null, '', sessionUrl(current));
+    // Normaliza links antigos (?sala=, ?apresentar) para /s/<sala>.
+    const current = readRoomFromUrl();
+    if (current && window.location.pathname + window.location.search !== roomPath(current)) {
+      window.history.replaceState(null, '', roomPath(current));
     }
-    const onPop = () => setSession(readSessionFromUrl());
+    const onPop = () => setRoom(readRoomFromUrl());
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
   }, []);
 
-  const enter = (room: string, role: Role, displayName: string) => {
+  const enter = (next: string, displayName: string) => {
     try {
       localStorage.setItem('kamus:name', displayName);
     } catch {
       // Sem armazenamento local: pede o nome de novo na próxima visita.
     }
-    rememberRoom(room);
+    rememberRoom(next);
     setRecentRooms(loadRecentRooms());
     setName(displayName);
-    window.history.pushState(null, '', sessionUrl({ room, role }));
-    setSession({ room, role });
+    window.history.pushState(null, '', roomPath(next));
+    setRoom(next);
   };
 
   const leave = () => {
     window.history.pushState(null, '', '/');
-    setSession(null);
+    setRoom(null);
   };
 
-  const forget = (room: string) => {
-    forgetRoom(room);
+  const forget = (r: string) => {
+    forgetRoom(r);
     setRecentRooms(loadRecentRooms());
   };
 
-  // Trocar de papel não reconecta: só atualiza o link na barra de endereço.
-  const changeRole = (role: Role) => {
-    if (session) window.history.replaceState(null, '', sessionUrl({ room: session.room, role }));
-  };
-
-  const joinRoom = (room: string) => {
+  const joinRoom = (next: string) => {
     if (name) {
-      enter(room, 'viewer', name);
+      enter(next, name);
     } else {
-      window.history.pushState(null, '', sessionUrl({ room, role: 'viewer' }));
-      setSession({ room, role: 'viewer' });
+      window.history.pushState(null, '', roomPath(next));
+      setRoom(next);
     }
   };
 
-  const inRoom = !!session && !!name;
+  if (room && name) {
+    return <RoomView key={room} room={room} name={name} onLeave={leave} onJoinRoom={joinRoom} />;
+  }
 
   return (
-    <div className="flex h-dvh flex-col">
-      <TopBar name={name} currentRoom={inRoom ? session.room : undefined} onHome={leave} onJoinRoom={joinRoom} />
-      {inRoom ? (
-        <RoomView
-          key={session.room}
-          room={session.room}
-          initialRole={session.role}
-          name={name}
-          onRoleChange={changeRole}
-          onLeave={leave}
-        />
-      ) : (
-        <div className="min-h-0 flex-1 overflow-y-auto">
-          <Home
-            initialName={name}
-            initialRoom={session?.room}
-            initialRole={session?.role}
-            recentRooms={recentRooms}
-            onEnter={enter}
-            onForgetRoom={forget}
-          />
-        </div>
-      )}
+    <div className="flex min-h-dvh flex-col">
+      <TopBar name={name} onHome={leave} onJoinRoom={joinRoom} />
+      <Home
+        initialName={name}
+        initialRoom={room ?? undefined}
+        recentRooms={recentRooms}
+        onEnter={enter}
+        onForgetRoom={forget}
+      />
     </div>
   );
 }
