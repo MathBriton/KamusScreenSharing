@@ -25,7 +25,7 @@ limitado pelo upload de quem apresenta.
 | Pasta      | Conteúdo                                                       |
 | ---------- | -------------------------------------------------------------- |
 | `server/`  | API em Node + Express + TypeScript (`livekit-server-sdk`)      |
-| `web/`     | Frontend em React + Vite + TypeScript (`livekit-client`)       |
+| `web/`     | Frontend em React + Vite + TypeScript, UI com [shadcn/ui](https://ui.shadcn.com) + Tailwind v4 (`livekit-client`) |
 
 ## Pré-requisitos
 
@@ -60,6 +60,18 @@ npm start                  # serve API + frontend em http://localhost:3001
 Para colocar no ar numa VPS (Docker + Caddy + LiveKit com TURN embutido), siga o
 [guia de deploy](deploy/README.md). É preciso HTTPS: `getDisplayMedia` só funciona em
 contexto seguro (ou em `localhost`).
+
+## Componentes de UI
+
+A interface usa [shadcn/ui](https://ui.shadcn.com): os componentes ficam em
+`web/src/components/ui/` e podem ser editados à vontade. Para adicionar outro:
+
+```bash
+cd web
+npx shadcn@latest add dialog
+```
+
+O tema (claro/escuro, seguindo o sistema) está nas variáveis CSS de `web/src/index.css`.
 
 ## Scripts
 

@@ -1,5 +1,10 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { ConnectionState, type Room } from 'livekit-client';
+import { SendHorizontal } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { cn } from '@/lib/utils';
 
 const CHAT_TOPIC = 'chat';
 const MAX_LENGTH = 1000;
@@ -20,7 +25,7 @@ interface Props {
 export function Chat({ room, connected }: Props) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState('');
-  const listRef = useRef<HTMLOListElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     room.registerTextStreamHandler(CHAT_TOPIC, async (reader, { identity }) => {
@@ -34,10 +39,10 @@ export function Chat({ room, connected }: Props) {
     return () => room.unregisterTextStreamHandler(CHAT_TOPIC);
   }, [room]);
 
-  // Mantém a última mensagem visível.
+  // Mantém a última mensagem visível (rola o viewport interno do ScrollArea).
   useEffect(() => {
-    const el = listRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
+    const viewport = scrollRef.current?.querySelector('[data-slot="scroll-area-viewport"]');
+    if (viewport) viewport.scrollTop = viewport.scrollHeight;
   }, [messages]);
 
   const send = async (e: FormEvent) => {
@@ -53,22 +58,28 @@ export function Chat({ room, connected }: Props) {
   };
 
   return (
-    <section className="panel chat">
-      <h3>Chat</h3>
-      <ol className="messages" ref={listRef}>
-        {messages.length === 0 && <li className="muted">Nenhuma mensagem ainda.</li>}
-        {messages.map((m) => (
-          <li key={m.id} className={m.isLocal ? 'mine' : undefined}>
-            <div className="message-meta">
-              <strong>{m.isLocal ? 'Você' : m.author}</strong>
-              <time>{m.at.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</time>
-            </div>
-            <p>{m.text}</p>
-          </li>
-        ))}
-      </ol>
-      <form className="chat-form" onSubmit={send}>
-        <input
+    <section className="flex min-h-80 flex-1 flex-col p-4 md:min-h-0">
+      <h3 className="mb-3 text-xs font-medium tracking-wide text-muted-foreground uppercase">Chat</h3>
+      <ScrollArea ref={scrollRef} className="min-h-0 flex-1">
+        <ol className="flex flex-col gap-3 pr-3">
+          {messages.length === 0 && <li className="text-sm text-muted-foreground">Nenhuma mensagem ainda.</li>}
+          {messages.map((m) => (
+            <li key={m.id} className="text-sm">
+              <div className="flex items-baseline gap-2">
+                <strong className={cn('font-medium', m.isLocal && 'text-blue-600 dark:text-blue-400')}>
+                  {m.isLocal ? 'Você' : m.author}
+                </strong>
+                <time className="text-xs text-muted-foreground">
+                  {m.at.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                </time>
+              </div>
+              <p className="mt-0.5 break-words whitespace-pre-wrap">{m.text}</p>
+            </li>
+          ))}
+        </ol>
+      </ScrollArea>
+      <form className="mt-3 flex gap-2" onSubmit={send}>
+        <Input
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           placeholder={connected ? 'Escreva uma mensagem…' : 'Conectando…'}
@@ -76,9 +87,9 @@ export function Chat({ room, connected }: Props) {
           disabled={!connected}
           aria-label="Mensagem"
         />
-        <button type="submit" disabled={!connected || !draft.trim()}>
-          Enviar
-        </button>
+        <Button type="submit" size="icon" disabled={!connected || !draft.trim()} aria-label="Enviar">
+          <SendHorizontal />
+        </Button>
       </form>
     </section>
   );
