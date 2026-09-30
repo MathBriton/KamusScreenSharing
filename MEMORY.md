@@ -11,7 +11,9 @@ narrativa. A especificação completa do projeto está no `CLAUDE.md`.
 
 - Branch principal: `main`. **Pendente**: marcá-la como padrão no GitHub (Settings → Branches); depois
   disso a branch antiga `claude/iniciar-projeto-n6nhpb` (mesmo conteúdo) pode ser apagada.
-- Tudo verde: `npm run typecheck`, `npm run build` e **11 testes E2E** (`npm run test:e2e`).
+- Tudo verde: `npm run typecheck`, `npm run build` e **16 testes E2E** (`npm run test:e2e`).
+- Chat completo: menções, responder, fixar, busca, "digitando…" e rabiscar no print.
+- `scripts/install-docker.sh` instala Docker + Compose em Linux (testado em Ubuntu 24.04).
 - **UI repaginada** (dark industrial, verde-limão) seguindo `web/src/UI/README.md`; protótipo em
   `web/src/UI/referencias/prototipo.webp`.
 - **Ainda não está em produção**: a VPS não foi contratada. Sugestões já discutidas: Oracle Cloud Free
@@ -23,6 +25,12 @@ narrativa. A especificação completa do projeto está no `CLAUDE.md`.
 
 Sugestões já apresentadas e ainda não pedidas (o dono do projeto escolhe):
 
+- Print da transmissão direto no chat (um clique/tecla `S`); prévia dos links (título/site/imagem,
+  buscados no servidor com proteção contra SSRF); modo teatro (`T`, esconde sidebar e barras).
+- Quem assiste o quê ("3 assistindo" no card); "trazer todos para minha tela" / seguir alguém.
+- Título da transmissão ("Ranked · Valorant"); qualidade de recepção escolhida por quem assiste.
+- Tecla `?` com os atalhos; lembrar Grade/Foco e sidebar por pessoa.
+- Página de diagnóstico de conexão (UDP/TURN); backup automático; alerta de servidor fora do ar.
 - Aviso no Discord via webhook quando alguém começa a transmitir.
 - Título da aba com "🔴 ao vivo" e contador de não lidas; notificação do navegador.
 - "Ping" na tela (marcar um ponto da transmissão para todos).
@@ -51,8 +59,14 @@ Pendências técnicas pequenas:
 - **Métricas**: ping = `room.engine.client.rtt`; resolução/FPS/bitrate = `getSenderStats`/
   `getReceiverStats` da transmissão selecionada (grade pequena usa camada simulcast menor, então a
   resolução exibida cai; é o dado real recebido).
-- **Chat pela API + LiveKit `sendData`** (tópico `chat`), não por text streams P2P: permite histórico
-  e validação no servidor. Avisos de entrada/saída são só locais (não gravados).
+- **Chat pela API + LiveKit `sendData`** (tópico `chat`, eventos `message` e `pin`), não por text
+  streams P2P: permite histórico e validação no servidor. Avisos de entrada/saída são só locais.
+- **Menções são resolvidas no cliente** (nomes da sala + autores; regex com nomes mais longos
+  primeiro). Sem contas, "@Nome" depende do nome digitado na entrada.
+- **"Digitando…"** vai direto pelo LiveKit (`publishData`, tópico `typing`, não confiável/lossy),
+  sem passar pelo servidor; expira em 4 s.
+- **Mensagens fixadas não expiram** (ficam fora da retenção de 90 dias).
+- **Rabiscar no print** gera um PNG novo no navegador (GIFs não são editáveis, perderiam a animação).
 - **SQLite nativo (`node:sqlite`)**: sem dependência nativa para compilar. Emite ExperimentalWarning,
   silenciado com `--disable-warning=ExperimentalWarning`.
 - **Retenção de 90 dias** (mensagens, imagens, "vistos"), configurável por `RETENTION_DAYS`.
@@ -77,9 +91,20 @@ Pendências técnicas pequenas:
   tirar o foco antes (`blur()` em `e2e/helpers.ts`).
 - Seletor `text=Entrar na sala` também casa com o título da home convidada; use `getByRole('button')`.
 - TypeScript 7 (nativo) está em uso: `baseUrl` não existe mais; `paths` são relativos ao tsconfig.
+- O Radix ScrollArea envolve o conteúdo em `display: table`, que estoura a largura com textos longos;
+  `index.css` força `display: block` no filho do viewport.
+- Grids CSS crescem com o conteúdo: use `grid-cols-1`/`min-w-0` em formulários da sidebar.
+- `getByLabel('Mensagem')` também casa com as listas "Mensagens": nos testes use o `textbox` com
+  `exact: true` (`chatInput` em `e2e/helpers.ts`).
+- Ao inserir texto programaticamente num campo controlado, reposicione o cursor em
+  `useLayoutEffect` (com `requestAnimationFrame`, digitação rápida sai fora de ordem).
+- Migrações do SQLite: `addColumn()` em `server/src/db.ts` (idempotente).
 
 ## Histórico
 
+- **2026-09-30 · Claude Code**: chat com @menções (autocompletar, destaque, aviso), responder
+  citando, fixar mensagens, busca no histórico, "digitando…" e rabiscar no print; API de pin/pins/
+  search com migração do SQLite; `scripts/install-docker.sh` e guia do Docker; 16 testes E2E.
 - **2026-09-30 · Claude Code**: pasta `UI/` movida para `web/src/UI/` (referências atualizadas).
 - **2026-09-30 · Claude Code**: repaginação da UI (pasta `UI/` com spec, tokens e protótipo; tema
   escuro fixo com Inter/JetBrains Mono; barra superior com LIVE, código e métricas; cards de

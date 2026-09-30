@@ -16,6 +16,29 @@ Tudo fica sob **um único domínio** (ex.: `share.seudominio.com`):
 - `wss://share.seudominio.com/rtc` → LiveKit (sinalização)
 - `turns:share.seudominio.com:5349` → TURN/TLS, usando o mesmo certificado do Caddy
 
+## Instalar o Docker
+
+**Linux (VPS ou máquina própria):** Ubuntu, Debian, Oracle Linux, Rocky, AlmaLinux, CentOS, RHEL
+ou Fedora. Instala o Docker Engine e o **Docker Compose** (plugin `docker compose`) pelo
+repositório oficial:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/MathBriton/KamusScreenSharing/main/scripts/install-docker.sh | sh
+# ou, com o repositório já clonado:
+sh scripts/install-docker.sh
+```
+
+Depois, saia e entre de novo no SSH (para usar `docker` sem `sudo`) e confira com
+`docker run --rm hello-world` e `docker compose version`.
+
+**Windows:** instale o [Docker Desktop](https://docs.docker.com/desktop/setup/install/windows-install/)
+(usa o WSL 2; o instalador ativa o que faltar). O Compose já vem incluído.
+
+**macOS:** instale o [Docker Desktop](https://docs.docker.com/desktop/setup/install/mac-install/)
+(Apple Silicon ou Intel). O Compose já vem incluído.
+
+> O comando antigo `docker-compose` (com hífen) foi descontinuado; use `docker compose`.
+
 ## Requisitos
 
 - VPS Linux com IP público. **2 vCPU / 2 GB de RAM** sobram para poucos amigos.

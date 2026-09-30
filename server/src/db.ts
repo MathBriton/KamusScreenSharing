@@ -42,3 +42,14 @@ db.exec(`
     last_room TEXT
   );
 `);
+
+// Migrações simples: colunas adicionadas depois da primeira versão.
+function addColumn(table: string, column: string, definition: string) {
+  const columns = db.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[];
+  if (!columns.some((c) => c.name === column)) db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+}
+
+addColumn('messages', 'reply_to', 'TEXT');
+addColumn('messages', 'pinned_at', 'INTEGER');
+addColumn('messages', 'pinned_by', 'TEXT');
+db.exec('CREATE INDEX IF NOT EXISTS messages_room_pinned ON messages (room, pinned_at)');

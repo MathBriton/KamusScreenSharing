@@ -12,6 +12,13 @@ export interface Attachment {
   size: number;
 }
 
+export interface ReplyPreview {
+  id: string;
+  author: string;
+  text: string;
+  hasImage: boolean;
+}
+
 export interface ChatMessage {
   id: string;
   identity: string;
@@ -19,7 +26,11 @@ export interface ChatMessage {
   text: string;
   createdAt: number;
   attachments: Attachment[];
+  replyTo: ReplyPreview | null;
+  pinned: { at: number; by: string } | null;
 }
+
+export type SearchKind = 'all' | 'links' | 'images';
 
 export interface OnlineFriend {
   identity: string;
@@ -62,13 +73,30 @@ export const chatApi = {
     const { messages } = await request<{ messages: ChatMessage[] }>(roomUrl(room, 'messages'), {}, token);
     return messages;
   },
-  async send(room: string, token: string, text: string, attachmentIds: string[]): Promise<ChatMessage> {
+  async send(room: string, token: string, text: string, attachmentIds: string[], replyTo?: string): Promise<ChatMessage> {
     const { message } = await request<{ message: ChatMessage }>(
       roomUrl(room, 'messages'),
-      json({ text, attachmentIds }),
+      json({ text, attachmentIds, replyTo }),
       token,
     );
     return message;
+  },
+  async pin(room: string, token: string, id: string, pinned: boolean): Promise<ChatMessage> {
+    const { message } = await request<{ message: ChatMessage }>(
+      roomUrl(room, `messages/${encodeURIComponent(id)}/pin`),
+      json({ pinned }),
+      token,
+    );
+    return message;
+  },
+  async pins(room: string, token: string): Promise<ChatMessage[]> {
+    const { messages } = await request<{ messages: ChatMessage[] }>(roomUrl(room, 'pins'), {}, token);
+    return messages;
+  },
+  async search(room: string, token: string, q: string, kind: SearchKind): Promise<ChatMessage[]> {
+    const params = new URLSearchParams({ q, kind });
+    const { messages } = await request<{ messages: ChatMessage[] }>(roomUrl(room, `search?${params}`), {}, token);
+    return messages;
   },
   async upload(room: string, token: string, file: Blob): Promise<Attachment> {
     const { attachment } = await request<{ attachment: Attachment }>(

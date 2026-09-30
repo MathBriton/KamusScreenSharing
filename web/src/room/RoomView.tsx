@@ -299,7 +299,13 @@ export function RoomView({ room: roomName, name, onLeave, onJoinRoom }: Props) {
 
         <aside className="flex min-h-[28rem] flex-col border-t bg-card md:min-h-0 md:w-[22rem] md:border-t-0 md:border-l">
           <ParticipantsPanel participants={participants} />
-          <Chat room={room} roomName={roomName} token={token} connected={connected} />
+          <Chat
+            room={room}
+            roomName={roomName}
+            token={token}
+            connected={connected}
+            participantNames={participants.map((p) => p.name)}
+          />
         </aside>
       </div>
 

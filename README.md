@@ -16,8 +16,9 @@ link, sem instalar nada.
   Máxima 1080p60), trocada na hora. Áudio da transmissão opcional e desligado por padrão.
 - **Para quem assiste**: zoom (roda, pinça, arrastar, `+` `-` `0`), tela cheia (`F`), janela
   flutuante (`P`), `G` alterna Grade/Foco e `1`–`9` escolhe a transmissão.
-- **Chat com histórico** (90 dias): links clicáveis, colar/arrastar prints, prévia de GIFs e abas
-  **Imagens** e **Links**.
+- **Chat com histórico** (90 dias): links clicáveis, colar/arrastar prints (e **rabiscar** neles
+  antes de enviar), prévia de GIFs, abas **Imagens** e **Links**, **@menções** com aviso,
+  **responder citando**, **mensagens fixadas**, **busca** no histórico e "fulano está digitando…".
 - **Salas fixas** (`/s/amigos`), salas recentes e menu **Amigos** (quem está online e onde).
 - **Celular** assiste (navegadores móveis não compartilham tela).
 
@@ -51,7 +52,8 @@ Documentação para quem desenvolve (pessoas e agentes de IA): [`CLAUDE.md`](CLA
 
 - Node.js 22 ou superior
 - Para o LiveKit local: nada além do Node (o script `npm run livekit:local` baixa o binário),
-  ou Docker (`npm run livekit`)
+  ou Docker (`npm run livekit`). Para instalar o Docker, veja
+  [Instalar o Docker](deploy/README.md#instalar-o-docker).
 
 ## Como rodar em desenvolvimento
 

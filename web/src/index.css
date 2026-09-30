@@ -76,6 +76,13 @@
   body {
     @apply bg-background font-sans text-foreground antialiased;
   }
+  /*
+   * O Radix ScrollArea envolve o conteúdo num "display: table", que cresce com textos
+   * longos (links) e estoura a largura da sidebar. Em bloco, o conteúdo respeita a largura.
+   */
+  [data-slot="scroll-area-viewport"] > div {
+    display: block !important;
+  }
   /* Barras de rolagem discretas. */
   * {
     scrollbar-width: thin;

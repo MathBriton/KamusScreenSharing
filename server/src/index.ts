@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import express, { type ErrorRequestHandler } from 'express';
-import { cleanup, findUpload, listMessages, postMessage, saveUpload } from './chat.js';
+import { cleanup, findUpload, listMessages, listPinned, postMessage, saveUpload, searchMessages, setPinned } from './chat.js';
 import { config } from './config.js';
 import { listFriends, touchPerson } from './friends.js';
 import { HttpError, authenticate, roomService } from './livekit.js';
@@ -51,8 +51,25 @@ app.get('/api/rooms/:room/messages', async (req, res) => {
 
 app.post('/api/rooms/:room/messages', async (req, res) => {
   const caller = await authenticate(req.headers.authorization, roomParam(req.params.room));
-  const message = await postMessage(caller, req.body?.text, req.body?.attachmentIds);
+  const message = await postMessage(caller, req.body?.text, req.body?.attachmentIds, req.body?.replyTo);
   res.status(201).json({ message });
+});
+
+app.post('/api/rooms/:room/messages/:id/pin', async (req, res) => {
+  const caller = await authenticate(req.headers.authorization, roomParam(req.params.room));
+  res.json({ message: await setPinned(caller, String(req.params.id), req.body?.pinned) });
+});
+
+app.get('/api/rooms/:room/pins', async (req, res) => {
+  const room = roomParam(req.params.room);
+  await authenticate(req.headers.authorization, room);
+  res.json({ messages: listPinned(room) });
+});
+
+app.get('/api/rooms/:room/search', async (req, res) => {
+  const room = roomParam(req.params.room);
+  await authenticate(req.headers.authorization, room);
+  res.json({ messages: searchMessages(room, req.query.q, req.query.kind) });
 });
 
 app.post(

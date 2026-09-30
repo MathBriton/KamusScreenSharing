@@ -31,7 +31,7 @@ Princípios que guiam as decisões:
 | Transmissão | Via SFU (LiveKit). Qualquer participante clica em **Transmitir**; **várias transmissões simultâneas**. **Compartilhar tela** troca a janela/tela sem derrubar a transmissão (`replaceTrack`). Qualidade (Texto 1080p15, Equilibrado 1080p30, Jogo 720p60, Máxima 1080p60) em **Configurações**, trocada ao vivo. Áudio da transmissão opcional e desligado por padrão (evita eco com o Discord). |
 | Sala (layout) | Barra superior (sala, nº de pessoas, Amigos, LIVE + duração da sessão, código com copiar, métricas: ping, conexão, resolução, FPS, bitrate), palco, sidebar (participantes + chat) e barra inferior de controles (Grade/Foco, Mic e Áudio só visuais, Compartilhar tela, Transmitir, Alternar tela, Tela cheia, Configurações, Sair da sala). |
 | Palco | **Grade** adaptável (1×1, 2×1, 2×2, 3×2, 3×3…) ou **Foco** (selecionada grande + miniaturas). Cards com avatar, nome, LIVE, "Transmitindo", microfone (visual) e menu; borda verde na selecionada. **Zoom** por vídeo (roda, pinça, arrastar, `+ - 0`); tela cheia (`F`); picture-in-picture (`P`); `G` alterna Grade/Foco; `1–9` escolhe a transmissão. |
-| Chat | **Persistente** (SQLite, retenção de 90 dias): histórico para quem chega depois; links clicáveis; **colar/arrastar imagens**; prévia de links diretos de imagem/GIF; abas **Chat / Imagens / Links**; lightbox. |
+| Chat | **Persistente** (SQLite, retenção de 90 dias): histórico para quem chega depois; links clicáveis; **colar/arrastar imagens** e **rabiscar no print** antes de enviar (seta, círculo, retângulo, traço); prévia de links diretos de imagem/GIF; abas **Chat / Imagens / Links**; lightbox. **@menções** com autocompletar, destaque e aviso (toast + notificação do navegador); **responder citando**; **fixar mensagens** (barra no topo; fixadas não expiram); **busca** no histórico inteiro (filtros Links/Imagens, salto até a mensagem); **"fulano está digitando…"**. |
 | Presença | Participantes com transmitindo/parado, `1080p · 60 FPS`, microfone (visual) e qualidade da conexão; avisos de entrada/saída/início/fim de transmissão (toast + linha no chat). |
 | Topbar / Amigos | Na home: `web/src/layout/TopBar.tsx`. Na sala: `web/src/room/RoomTopBar.tsx`. Ambas com o menu **Amigos** (online com sala/ao vivo/Entrar e "vistos recentemente"). Novos menus entram nessas barras. |
 | Celular | Detecta navegador móvel e só permite assistir, explicando o motivo. |
@@ -51,6 +51,7 @@ npm run build           # server/dist + web/dist
 npm start               # produção local: API + frontend em :3001
 
 npm run test:e2e        # Playwright: sobe LiveKit (:7880) e o app (:3100) sozinho
+sh scripts/install-docker.sh           # instala Docker + Compose num Linux (VPS)
 npx playwright test e2e/chat.spec.ts   # um arquivo
 npx playwright test -g "zoom"          # por nome
 ```
@@ -89,9 +90,12 @@ navegador ──POST /api/token──▶ server (Express) ──▶ JWT do LiveK
 | --- | --- | --- | --- |
 | POST | `/api/token` | — | `{room, name, role}` → `{token, url}` |
 | GET | `/api/rooms/:room/messages` | token da sala | últimas 500 mensagens |
-| POST | `/api/rooms/:room/messages` | token da sala | `{text, attachmentIds}`; grava e repassa pelo LiveKit |
+| POST | `/api/rooms/:room/messages` | token da sala | `{text, attachmentIds, replyTo?}`; grava e repassa pelo LiveKit |
 | POST | `/api/rooms/:room/uploads` | token da sala | corpo binário da imagem (máx. `MAX_UPLOAD_MB`) |
 | GET | `/api/uploads/:id` | — (UUID) | serve a imagem com `nosniff` + CSP `sandbox` |
+| POST | `/api/rooms/:room/messages/:id/pin` | token da sala | `{pinned}`; fixa/desafixa e repassa (`type: "pin"`) |
+| GET | `/api/rooms/:room/pins` | token da sala | mensagens fixadas (qualquer idade) |
+| GET | `/api/rooms/:room/search` | token da sala | `?q=&kind=all\|links\|images` → até 50 resultados |
 | GET | `/api/rooms/:room/info` | token da sala | `{createdAt}` (duração da sessão) |
 | GET | `/api/friends` | — | `{online, recent}` |
 

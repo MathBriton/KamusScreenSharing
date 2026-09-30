@@ -14,7 +14,7 @@ export async function joinRoom(page: Page, room: string, name: string) {
   await page.getByLabel('Seu nome').fill(name);
   await page.getByRole('button', { name: 'Entrar na sala' }).click();
   await expect(page.getByRole('heading', { name: `Sala ${room}` })).toBeVisible();
-  await expect(page.getByLabel('Mensagem')).toBeEnabled();
+  await expect(page.getByRole('textbox', { name: 'Mensagem', exact: true })).toBeEnabled();
 }
 
 export async function startSharing(page: Page) {
@@ -31,7 +31,7 @@ export async function expectVideoPlaying(page: Page, tileName: string) {
     .toBeGreaterThan(0);
 }
 
-export const chatInput = (page: Page) => page.getByRole('textbox', { name: 'Mensagem' });
+export const chatInput = (page: Page) => page.getByRole('textbox', { name: 'Mensagem', exact: true });
 export const messages = (page: Page) => page.getByRole('list', { name: 'Mensagens' });
 
 export async function sendChat(page: Page, text: string) {
