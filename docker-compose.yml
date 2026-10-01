@@ -1,8 +1,42 @@
+# Teste local completo: app (API + site) + LiveKit, sem domínio nem HTTPS.
+#
+#   docker compose up --build      → abra http://localhost:3001
+#
+# Funciona no Docker Desktop (Windows/macOS) e no Linux. Para testar com duas pessoas, abra
+# duas janelas (uma anônima) no MESMO computador: compartilhar tela exige HTTPS ou "localhost",
+# então outros aparelhos da rede não conseguem transmitir por aqui. Produção: deploy/.
+#
+# Só o LiveKit (para `npm run dev`): docker compose up livekit
+name: kamus-local
+
 services:
   livekit:
-    image: livekit/livekit-server:latest
-    command: --dev --bind 0.0.0.0
+    image: livekit/livekit-server:v1.9.1
+    # --dev: chaves devkey/secret. --node-ip: anuncia 127.0.0.1 para o navegador do próprio
+    # computador alcançar as portas publicadas abaixo (sem isso ele anuncia o IP interno do Docker).
+    command: --dev --bind 0.0.0.0 --node-ip 127.0.0.1
     ports:
       - "7880:7880"       # sinalização (WebSocket) / API
       - "7881:7881"       # WebRTC via TCP
       - "7882:7882/udp"   # WebRTC via UDP
+
+  app:
+    build: .
+    ports:
+      - "3001:3001"
+    environment:
+      HOST: 0.0.0.0
+      PORT: 3001
+      # URL que o NAVEGADOR usa para falar com o LiveKit.
+      LIVEKIT_URL: ws://localhost:7880
+      # URL que o servidor usa (rede interna do Docker).
+      LIVEKIT_API_URL: http://livekit:7880
+      LIVEKIT_API_KEY: devkey
+      LIVEKIT_API_SECRET: secret
+    volumes:
+      - app_data:/app/data
+    depends_on:
+      - livekit
+
+volumes:
+  app_data:

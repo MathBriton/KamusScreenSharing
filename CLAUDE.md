@@ -49,7 +49,8 @@ npm install
 cp .env.example .env
 
 npm run livekit:local   # LiveKit em modo dev sem Docker (baixa o binário em .cache/)
-npm run livekit         # ...ou via Docker Compose
+npm run livekit         # ...ou via Docker Compose (só o serviço livekit)
+docker compose up --build   # teste local completo (app :3001 + LiveKit), sem Node; ver README
 npm run dev             # API :3001 + Vite :5173 (proxy /api → 127.0.0.1:3001); scripts/dev.mjs, roda no Windows também
 
 npm run typecheck       # tsc nos dois workspaces

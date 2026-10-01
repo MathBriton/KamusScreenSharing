@@ -77,6 +77,31 @@ clique em **Criar sala** (ou dê um nome à sala) e depois em
 **Transmitir**. Use **Copiar link** e abra o link em outra aba ou em outro navegador
 para assistir.
 
+## Testar com Docker (sem instalar Node)
+
+Sobe o app e o LiveKit no seu computador, sem domínio nem HTTPS. Só precisa do
+[Docker Desktop](https://www.docker.com/products/docker-desktop/) (no Windows ele pede o WSL 2 na
+instalação; aceite).
+
+1. Baixe o projeto sem git: no GitHub, **Code → Download ZIP**, e extraia.
+2. Abra um terminal **dentro da pasta extraída** (no Windows: na pasta, clique com o botão direito →
+   *Abrir no Terminal*) e rode:
+
+   ```bash
+   docker compose up --build
+   ```
+
+   A primeira vez demora alguns minutos (baixa e compila). Pronto quando aparecer
+   `Servidor ouvindo em http://0.0.0.0:3001`.
+3. Abra http://localhost:3001, entre com nome + PIN, crie uma sala e clique em **Transmitir**.
+   Para ver como espectador, abra o link da sala numa **janela anônima** com outro nome.
+4. Para parar: `Ctrl+C` no terminal (ou `docker compose down`). Os perfis e o chat ficam guardados
+   num volume do Docker; `docker compose down -v` apaga tudo.
+
+Limite do teste local: só o próprio computador consegue **transmitir**. O navegador só libera
+compartilhar tela em HTTPS ou em `localhost`, então outros aparelhos da rede não transmitem por
+aqui. Para os amigos usarem de verdade, veja a produção em [`deploy/`](deploy/README.md).
+
 ## Build de produção
 
 ```bash

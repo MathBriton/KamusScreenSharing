@@ -9,6 +9,8 @@ narrativa. A especificação completa do projeto está no `CLAUDE.md`.
 
 ## Estado atual (2026-10-01)
 
+- Hospedagem: o dono está avaliando **Hostinger VPS (KVM 1, ~R$ 54/mês, mensal)**; achou a Oracle Free
+  lenta demais. Testar antes com `docker compose up --build` (README).
 - Branch principal: `main`. **Pendente**: marcá-la como padrão no GitHub (Settings → Branches); depois
   disso a branch antiga `claude/iniciar-projeto-n6nhpb` (mesmo conteúdo) pode ser apagada.
 - Tudo verde: `npm run typecheck`, `npm run build` e **23 testes E2E** (`npm run test:e2e`).
@@ -91,6 +93,12 @@ Pendências técnicas pequenas:
 
 ## Armadilhas conhecidas
 
+- Docker local: o LiveKit precisa de `--node-ip 127.0.0.1` (senão anuncia o IP interno do contêiner
+  e o vídeo não conecta). Transmitir só funciona em `localhost` (HTTPS fora dele).
+- No sandbox do Claude Code, `docker build` não alcança o npm (proxy em 127.0.0.1 com CA própria):
+  inicie o `dockerd` e construa com `--network host`, build-args `HTTPS_PROXY` e a CA
+  `/root/.ccr/ca-bundle.crt` copiada num Dockerfile temporário (não altere o Dockerfile real).
+
 - O dono do projeto **não tem git local**: arquivos novos chegam pelo upload do site do GitHub
   ("Add file → Upload files"), às vezes na raiz do repositório. Dê `git pull` antes de procurar.
 
@@ -127,6 +135,10 @@ Pendências técnicas pequenas:
   (`TEST_PIN`) e tenta de novo se dois testes criarem o mesmo nome ao mesmo tempo.
 
 ## Histórico
+
+- **2026-10-01 · Claude Code**: `docker-compose.yml` da raiz agora sobe o teste local completo
+  (app :3001 + LiveKit com `--node-ip 127.0.0.1`); README com o passo a passo sem git (Download ZIP).
+  Validado no sandbox: transmissão e chat entre dois navegadores contra os contêineres.
 
 - **2026-10-01 · Claude Code**: logo do Kamus na barra superior (home e sala; só o símbolo em telas
   menores) e como favicon. O original (enviado pelo site do GitHub, sem git local) tinha fundo branco e
