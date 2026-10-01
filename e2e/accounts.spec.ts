@@ -70,3 +70,12 @@ test('sininho: menção em outra sala e amigo ao vivo', async ({ browser }) => {
   await list.getByRole('button', { name: /Julia Sino está ao vivo/ }).click();
   await expect(ivo.getByRole('heading', { name: `Sala ${roomB}` })).toBeVisible();
 });
+
+test('login explica quando a API está fora do ar (ex.: proxy do Vite sem a API)', async ({ page }) => {
+  await page.route('**/api/auth/check', (route) => route.fulfill({ status: 502, body: '' }));
+  await page.goto('/');
+  const form = page.getByRole('region', { name: 'Entrar' });
+  await form.getByLabel('Seu nome').fill('Sem Servidor');
+  await form.getByRole('button', { name: 'Continuar' }).click();
+  await expect(form.getByRole('alert')).toContainText('A API está rodando');
+});

@@ -13,7 +13,9 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      '/api': 'http://localhost:3001',
+      // 127.0.0.1, não "localhost": no Node 17+ (e no Windows) "localhost" pode virar ::1 (IPv6),
+      // e a API escuta só em IPv4 → "http proxy error".
+      '/api': 'http://127.0.0.1:3001',
     },
   },
 });

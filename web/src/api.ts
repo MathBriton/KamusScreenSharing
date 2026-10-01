@@ -79,12 +79,21 @@ export interface Session {
   user: User;
 }
 
+const API_DOWN = 'Não consegui falar com o servidor. A API está rodando (porta 3001)?';
+
 async function request<T>(path: string, init: RequestInit = {}, token?: string): Promise<T> {
   const headers = new Headers(init.headers);
   if (token) headers.set('Authorization', `Bearer ${token}`);
-  const res = await fetch(path, { ...init, headers });
+  let res: Response;
+  try {
+    res = await fetch(path, { ...init, headers });
+  } catch {
+    throw new Error(API_DOWN);
+  }
   const body = await res.json().catch(() => ({}));
   if (!res.ok) {
+    // Sem corpo JSON e com erro 5xx: em dev, é o proxy do Vite sem conseguir falar com a API.
+    if (!body.error && res.status >= 500) throw new Error(API_DOWN);
     throw new Error(body.error ?? `Falha na requisição (HTTP ${res.status})`);
   }
   return body as T;
