@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ConnectionQuality } from 'livekit-client';
-import { Check, Copy, Loader2, MonitorPlay, Signal } from 'lucide-react';
+import { Check, Copy, Loader2, Signal } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -9,6 +9,7 @@ import { NotificationsMenu } from '@/layout/NotificationsMenu';
 import { ProfileMenu } from '@/layout/ProfileMenu';
 import { RoomsMenu } from '@/layout/RoomsMenu';
 import { cn } from '@/lib/utils';
+import { Logo } from '@/logo/Logo';
 import { formatBitrate, type StreamStats } from './useMetrics';
 
 export const CONNECTION_LABELS: Record<ConnectionQuality, string> = {
@@ -90,8 +91,7 @@ export function RoomTopBar({
         className="flex items-center gap-2 font-semibold tracking-tight"
         aria-label="Kamus: início"
       >
-        <MonitorPlay className="size-5 text-primary" />
-        <span className="hidden text-sm uppercase lg:inline">Kamus</span>
+        <Logo fullFrom="lg" />
       </a>
 
       <div className="h-6 w-px bg-border max-sm:hidden" />

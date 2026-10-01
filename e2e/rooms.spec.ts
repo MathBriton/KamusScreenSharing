@@ -60,3 +60,14 @@ test('avisos de entrada e saída', async ({ browser }) => {
   await bruno.getByRole('button', { name: 'Sair da sala' }).click();
   await expect(ana.locator('[data-sonner-toast]', { hasText: 'Bruno saiu da sala' })).toBeVisible();
 });
+
+test('logo na barra superior (home e sala) e favicon', async ({ page }) => {
+  await page.goto('/');
+  const home = page.getByRole('link', { name: 'Kamus: início' });
+  await expect(home.locator('img:visible')).toHaveCount(1);
+  await expect.poll(() => home.locator('img:visible').evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
+  expect((await page.request.get('/favicon.png')).headers()['content-type']).toContain('image/png');
+
+  await joinRoom(page, uniqueRoom('logo'), 'Ana');
+  await expect(page.getByRole('link', { name: 'Kamus: início' }).locator('img:visible')).toHaveCount(1);
+});

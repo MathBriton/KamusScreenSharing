@@ -11,7 +11,7 @@ narrativa. A especificação completa do projeto está no `CLAUDE.md`.
 
 - Branch principal: `main`. **Pendente**: marcá-la como padrão no GitHub (Settings → Branches); depois
   disso a branch antiga `claude/iniciar-projeto-n6nhpb` (mesmo conteúdo) pode ser apagada.
-- Tudo verde: `npm run typecheck`, `npm run build` e **22 testes E2E** (`npm run test:e2e`).
+- Tudo verde: `npm run typecheck`, `npm run build` e **23 testes E2E** (`npm run test:e2e`).
 - **Perfis nome + PIN**, menus **Salas / Amigos / sininho / Perfil** na barra superior e
   **mensagens privadas** entre amigos (SSE). Ver `CLAUDE.md` (tabelas de funcionalidades e API).
 - Chat completo: menções, responder, fixar, busca, "digitando…" e rabiscar no print.
@@ -91,6 +91,9 @@ Pendências técnicas pequenas:
 
 ## Armadilhas conhecidas
 
+- O dono do projeto **não tem git local**: arquivos novos chegam pelo upload do site do GitHub
+  ("Add file → Upload files"), às vezes na raiz do repositório. Dê `git pull` antes de procurar.
+
 - `[vite] http proxy error: /api/...` = a API (:3001) não respondeu (caiu, não subiu, ou `localhost` virou
   `::1`). O proxy usa `127.0.0.1` e `npm run dev` (`scripts/dev.mjs`) prefixa os logs `[api]`/`[web]`,
   checa Node ≥ 22.5 e derruba os dois se um cair. `&`/`wait` no script quebravam no Windows (cmd).
@@ -124,6 +127,10 @@ Pendências técnicas pequenas:
   (`TEST_PIN`) e tenta de novo se dois testes criarem o mesmo nome ao mesmo tempo.
 
 ## Histórico
+
+- **2026-10-01 · Claude Code**: logo do Kamus na barra superior (home e sala; só o símbolo em telas
+  menores) e como favicon. O original (enviado pelo site do GitHub, sem git local) tinha fundo branco e
+  texto preto: foi recortado, com fundo transparente e texto em `--foreground`. 23 testes.
 
 - **2026-10-01 · Claude Code**: correção do `http proxy error` no dev (proxy em `127.0.0.1`,
   `scripts/dev.mjs` multiplataforma, `engines` Node ≥ 22.5, login avisa "A API está rodando?"); 22 testes.

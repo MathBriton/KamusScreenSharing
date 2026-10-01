@@ -1,4 +1,4 @@
-import { MonitorPlay } from 'lucide-react';
+import { Logo } from '@/logo/Logo';
 import { useAccount } from '@/account/AccountContext';
 import { FriendsMenu } from './FriendsMenu';
 import { NotificationsMenu } from './NotificationsMenu';
@@ -22,9 +22,9 @@ export function TopBar({ onHome, onJoinRoom }: Props) {
           onHome();
         }}
         className="mr-2 flex items-center gap-2 font-semibold"
+        aria-label="Kamus: início"
       >
-        <MonitorPlay className="size-5 text-primary" />
-        <span className="hidden text-sm tracking-tight uppercase sm:inline">Kamus</span>
+        <Logo />
       </a>
       {session && (
         <>

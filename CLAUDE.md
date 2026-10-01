@@ -22,7 +22,9 @@ Princípios que guiam as decisões:
 - **Interface em português (pt-BR)**, inclusive mensagens de erro da API e comentários do código.
 - **Design**: dark industrial minimalista com toque de gaming UI, uma única cor de destaque (verde-limão)
   e vermelho só para LIVE/parar/sair. A especificação visual e os tokens ficam em **`web/src/UI/`**
-  (`README.md`, `TOKENS.md` e o protótipo em `referencias/`).
+  (`README.md`, `TOKENS.md` e o protótipo em `referencias/`). A **logo** fica em `web/src/logo/`
+  (`Logo.tsx`; o original enviado é `kamus-logo-original.png`, de fundo branco e texto preto, e as versões
+  usadas na barra, `kamus-logo.png`/`kamus-mark.png`, têm fundo transparente e texto claro).
 
 ## Funcionalidades implementadas
 
