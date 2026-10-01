@@ -2,7 +2,7 @@
 
 Compartilhamento de tela **1-para-muitos** direto no navegador, para uso entre amigos (a voz
 fica no Discord). Quem apresenta cria uma sala e compartilha a tela; os espectadores entram pelo
-link, sem instalar nada.
+link, sem instalar nada. Cada pessoa entra com **nome + PIN** (sem e-mail nem senha longa).
 
 ## Recursos
 
@@ -19,7 +19,11 @@ link, sem instalar nada.
 - **Chat com histórico** (90 dias): links clicáveis, colar/arrastar prints (e **rabiscar** neles
   antes de enviar), prévia de GIFs, abas **Imagens** e **Links**, **@menções** com aviso,
   **responder citando**, **mensagens fixadas**, **busca** no histórico e "fulano está digitando…".
-- **Salas fixas** (`/s/amigos`), salas recentes e menu **Amigos** (quem está online e onde).
+- **Salas fixas** (`/s/amigos`) e salas recentes.
+- **Barra superior** com os menus **Salas** (ativas agora, criar/entrar, recentes), **Amigos**
+  (online/offline, onde estão, ao vivo, entrar na sala), **sininho** (mensagens privadas, menções
+  e amigo ao vivo, com notificação do navegador) e **Perfil** (trocar nome e PIN, sair).
+- **Mensagens privadas** entre amigos, em tempo real, pelo menu Amigos.
 - **Celular** assiste (navegadores móveis não compartilham tela).
 
 O visual segue a especificação em [`web/src/UI/`](web/src/UI/README.md): dark industrial minimalista, uma única cor
@@ -68,7 +72,8 @@ npm run livekit:local      # ou, com Docker: npm run livekit
 npm run dev
 ```
 
-Abra http://localhost:5173, clique em **Criar sala** (ou dê um nome à sala) e depois em
+Abra http://localhost:5173, entre com um nome e um PIN (o perfil é criado na primeira vez),
+clique em **Criar sala** (ou dê um nome à sala) e depois em
 **Transmitir**. Use **Copiar link** e abra o link em outra aba ou em outro navegador
 para assistir.
 

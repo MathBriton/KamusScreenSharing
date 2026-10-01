@@ -9,13 +9,13 @@ export function isValidRoomName(room: string): boolean {
   return ROOM_NAME.test(room);
 }
 
-export async function createToken(room: string, identity: string, name: string, role: Role): Promise<string> {
+export async function createToken(room: string, identity: string, name: string, role: Role, userId: string): Promise<string> {
   const token = new AccessToken(config.livekitApiKey, config.livekitApiSecret, {
     identity,
     name,
     ttl: '6h',
-    // Papel inicial, visível para os outros participantes (lista de presentes).
-    attributes: { role },
+    // Papel inicial e perfil, visíveis para os outros participantes.
+    attributes: { role, userId },
   });
 
   token.addGrant({

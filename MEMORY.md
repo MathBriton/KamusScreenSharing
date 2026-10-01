@@ -7,11 +7,13 @@ Memória de trabalho compartilhada entre **Claude Code** e **Codex**. Serve para
 entrada no topo do "Histórico" (data, ferramenta, o que mudou). Seja breve: fatos e decisões, não
 narrativa. A especificação completa do projeto está no `CLAUDE.md`.
 
-## Estado atual (2026-09-30)
+## Estado atual (2026-10-01)
 
 - Branch principal: `main`. **Pendente**: marcá-la como padrão no GitHub (Settings → Branches); depois
   disso a branch antiga `claude/iniciar-projeto-n6nhpb` (mesmo conteúdo) pode ser apagada.
-- Tudo verde: `npm run typecheck`, `npm run build` e **16 testes E2E** (`npm run test:e2e`).
+- Tudo verde: `npm run typecheck`, `npm run build` e **21 testes E2E** (`npm run test:e2e`).
+- **Perfis nome + PIN**, menus **Salas / Amigos / sininho / Perfil** na barra superior e
+  **mensagens privadas** entre amigos (SSE). Ver `CLAUDE.md` (tabelas de funcionalidades e API).
 - Chat completo: menções, responder, fixar, busca, "digitando…" e rabiscar no print.
 - `scripts/install-docker.sh` instala Docker + Compose em Linux (testado em Ubuntu 24.04).
 - **UI repaginada** (dark industrial, verde-limão) seguindo `web/src/UI/README.md`; protótipo em
@@ -41,13 +43,26 @@ Sugestões já apresentadas e ainda não pedidas (o dono do projeto escolhe):
 Pendências técnicas pequenas:
 
 - Tornar `main` a branch padrão no GitHub (Settings → Branches) e apagar a branch antiga.
+- A tabela `people` (antigos "vistos recentemente") não é mais escrita; só a limpeza a usa. Pode sair
+  numa migração futura.
+- Esqueci o PIN: não há recuperação pela interface. Hoje, apagar o usuário direto no SQLite
+  (`DELETE FROM users WHERE name_key = ...`) e a pessoa cria de novo.
 - O chat não pagina: o histórico traz as últimas 500 mensagens, e as abas Imagens/Links derivam delas.
 
 ## Decisões (e o porquê)
 
 - **LiveKit como SFU** (não mediasoup): binário único, TURN embutido, SDKs prontos.
-- **Sem autenticação**: projeto para poucos amigos. O token do LiveKit é usado para autenticar as rotas
-  do chat (garante que a pessoa está na sala e não fala em nome de outra).
+- **Perfil leve: nome + PIN** (escolha do dono, para as mensagens privadas): sem e-mail/senha. Nome
+  único sem acentos/maiúsculas (`name_key`), PIN com scrypt, sessão = token aleatório (no banco só o
+  sha256). 5 PINs errados bloqueiam o nome por 5 min (em memória): alguém pode travar o nome de outro
+  por 5 min, aceito para um grupo de amigos. Perfis não expiram com a retenção.
+- O **token do LiveKit** continua autenticando as rotas do chat; `/api/token` exige sessão e põe o
+  `userId` nos atributos (identidade `userId:aleatório`, permite a mesma pessoa em duas abas).
+- **Tempo real da conta por SSE** (`/api/me/events?token=`; `EventSource` não manda cabeçalho). O
+  Caddyfile não comprime essa rota (senão o SSE fica preso no buffer).
+- **Sininho**: DM, menção (em qualquer sala, pelo nome do perfil) e "ao vivo" (o cliente chama
+  `POST /rooms/:sala/live` ao transmitir; 10 min de intervalo por pessoa+sala). Notificações e DMs
+  seguem a retenção de 90 dias.
 - **Qualquer um pode apresentar; várias transmissões ao mesmo tempo**. O papel é só um atributo
   (`role`) que o próprio participante altera (`canUpdateOwnMetadata`), sem reconectar.
 - **Áudio da transmissão desligado por padrão**: o grupo usa o Discord para voz.
@@ -70,7 +85,7 @@ Pendências técnicas pequenas:
 - **SQLite nativo (`node:sqlite`)**: sem dependência nativa para compilar. Emite ExperimentalWarning,
   silenciado com `--disable-warning=ExperimentalWarning`.
 - **Retenção de 90 dias** (mensagens, imagens, "vistos"), configurável por `RETENTION_DAYS`.
-- **"Amigos" = quem usa o servidor**, identificado pelo nome (sem contas); online vem do LiveKit.
+- **"Amigos" = todos os perfis do servidor**; online = está em alguma sala (LiveKit), não na home.
 - **Tudo sob um domínio** na produção; TURN/TLS reaproveita o certificado do Caddy (reiniciar o LiveKit
   mensalmente para pegar o certificado renovado; ver `deploy/README.md`).
 
@@ -99,8 +114,17 @@ Pendências técnicas pequenas:
 - Ao inserir texto programaticamente num campo controlado, reposicione o cursor em
   `useLayoutEffect` (com `requestAnimationFrame`, digitação rápida sai fora de ordem).
 - Migrações do SQLite: `addColumn()` em `server/src/db.ts` (idempotente).
+- O painel de DM (Sheet do Radix) é modal: o resto da página sai da árvore de acessibilidade enquanto
+  ele está aberto; nos testes, feche com `Escape` antes de procurar botões da barra.
+- Nos testes os nomes se repetem entre arquivos: `login()` cria o perfil ou entra com o PIN padrão
+  (`TEST_PIN`) e tenta de novo se dois testes criarem o mesmo nome ao mesmo tempo.
 
 ## Histórico
+
+- **2026-10-01 · Claude Code**: perfis nome + PIN (login na home e no link da sala), menus Salas,
+  Amigos (online/offline + mensagem), sininho (DM, menção, ao vivo) e Perfil (trocar nome/PIN, sair);
+  mensagens privadas com SSE; API `/api/auth/*`, `/api/me/*`, `/api/rooms/active`, `/live`; barra da
+  sala mais compacta; 21 testes E2E (`accounts.spec.ts` novo; `login()` em `e2e/helpers.ts`).
 
 - **2026-09-30 · Claude Code**: chat com @menções (autocompletar, destaque, aviso), responder
   citando, fixar mensagens, busca no histórico, "digitando…" e rabiscar no print; API de pin/pins/

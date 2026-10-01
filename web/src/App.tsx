@@ -1,21 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { Loader2 } from 'lucide-react';
+import { AccountProvider, useAccount } from './account/AccountContext';
+import { DmPanel } from './account/DmPanel';
 import { Home } from './Home';
 import { TopBar } from './layout/TopBar';
 import { RoomView } from './room/RoomView';
 import { forgetRoom, loadRecentRooms, readRoomFromUrl, rememberRoom, roomPath } from './rooms';
 
-function loadName(): string {
-  try {
-    return localStorage.getItem('kamus:name') ?? '';
-  } catch {
-    return '';
-  }
-}
-
 export function App() {
   const [room, setRoom] = useState<string | null>(readRoomFromUrl);
-  const [name, setName] = useState(loadName);
-  const [recentRooms, setRecentRooms] = useState(loadRecentRooms);
 
   useEffect(() => {
     // Normaliza links antigos (?sala=, ?apresentar) para /s/<sala>.
@@ -28,51 +21,69 @@ export function App() {
     return () => window.removeEventListener('popstate', onPop);
   }, []);
 
-  const enter = (next: string, displayName: string) => {
-    try {
-      localStorage.setItem('kamus:name', displayName);
-    } catch {
-      // Sem armazenamento local: pede o nome de novo na próxima visita.
-    }
+  const go = useCallback((next: string | null) => {
+    window.history.pushState(null, '', next ? roomPath(next) : '/');
+    setRoom(next);
+  }, []);
+
+  return (
+    <AccountProvider currentRoom={room} onJoinRoom={go}>
+      <Shell room={room} go={go} />
+      <DmPanel />
+    </AccountProvider>
+  );
+}
+
+function Shell({ room, go }: { room: string | null; go: (room: string | null) => void }) {
+  const { session, ready } = useAccount();
+  const [recentRooms, setRecentRooms] = useState(loadRecentRooms);
+
+  const enter = (next: string) => {
     rememberRoom(next);
     setRecentRooms(loadRecentRooms());
-    setName(displayName);
-    window.history.pushState(null, '', roomPath(next));
-    setRoom(next);
+    go(next);
   };
 
-  const leave = () => {
-    window.history.pushState(null, '', '/');
-    setRoom(null);
-  };
-
-  const forget = (r: string) => {
-    forgetRoom(r);
-    setRecentRooms(loadRecentRooms());
-  };
-
-  const joinRoom = (next: string) => {
-    if (name) {
-      enter(next, name);
-    } else {
-      window.history.pushState(null, '', roomPath(next));
-      setRoom(next);
+  // Entrar numa sala (pelo link ou pelos menus) também a coloca nas recentes.
+  useEffect(() => {
+    if (room && session) {
+      rememberRoom(room);
+      setRecentRooms(loadRecentRooms());
     }
-  };
+  }, [room, session]);
 
-  if (room && name) {
-    return <RoomView key={room} room={room} name={name} onLeave={leave} onJoinRoom={joinRoom} />;
+  if (!ready) {
+    return (
+      <div className="grid min-h-dvh place-items-center text-muted-foreground">
+        <Loader2 className="animate-spin" aria-label="Carregando" />
+      </div>
+    );
+  }
+
+  if (room && session) {
+    return (
+      <RoomView
+        key={room}
+        room={room}
+        name={session.user.name}
+        sessionToken={session.token}
+        onLeave={() => go(null)}
+        onJoinRoom={enter}
+      />
+    );
   }
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <TopBar name={name} onHome={leave} onJoinRoom={joinRoom} />
+      <TopBar onHome={() => go(null)} onJoinRoom={enter} />
       <Home
-        initialName={name}
         initialRoom={room ?? undefined}
         recentRooms={recentRooms}
         onEnter={enter}
-        onForgetRoom={forget}
+        onForgetRoom={(r) => {
+          forgetRoom(r);
+          setRecentRooms(loadRecentRooms());
+        }}
       />
     </div>
   );

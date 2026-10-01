@@ -4,9 +4,24 @@ import { fileURLToPath } from 'node:url';
 import express, { type ErrorRequestHandler } from 'express';
 import { cleanup, findUpload, listMessages, listPinned, postMessage, saveUpload, searchMessages, setPinned } from './chat.js';
 import { config } from './config.js';
-import { listFriends, touchPerson } from './friends.js';
+import { conversation, conversations, markConversationRead, sendDm } from './dms.js';
+import { subscribe } from './events.js';
+import { listActiveRooms, listFriends, usersInRoom } from './friends.js';
 import { HttpError, authenticate, roomService } from './livekit.js';
-import { createToken, isValidRoomName, type Role } from './token.js';
+import { listNotifications, markNotificationsRead, notify, shouldNotifyLive } from './notifications.js';
+import { createToken, isValidRoomName } from './token.js';
+import {
+  changePin,
+  listUsers,
+  login,
+  logout,
+  nameExists,
+  register,
+  rename,
+  requireUser,
+  touchUser,
+  userFromToken,
+} from './users.js';
 
 const app = express();
 app.use(express.json());
@@ -15,24 +30,113 @@ app.get('/api/health', (_req, res) => {
   res.json({ ok: true });
 });
 
-app.post('/api/token', async (req, res) => {
-  const { room, name, role } = req.body ?? {};
+// ---- Perfil (nome + PIN) ----
 
+app.post('/api/auth/check', (req, res) => {
+  res.json({ exists: nameExists(req.body?.name) });
+});
+
+app.post('/api/auth/register', (req, res) => {
+  res.status(201).json(register(req.body?.name, req.body?.pin));
+});
+
+app.post('/api/auth/login', (req, res) => {
+  res.json(login(req.body?.name, req.body?.pin));
+});
+
+app.post('/api/auth/logout', (req, res) => {
+  logout(req.headers.authorization);
+  res.json({ ok: true });
+});
+
+app.get('/api/me', (req, res) => {
+  res.json({ user: requireUser(req.headers.authorization) });
+});
+
+app.patch('/api/me', (req, res) => {
+  const user = requireUser(req.headers.authorization);
+  res.json({ user: rename(user, req.body?.name) });
+});
+
+app.post('/api/me/pin', (req, res) => {
+  const user = requireUser(req.headers.authorization);
+  changePin(user, req.body?.currentPin, req.body?.newPin);
+  res.json({ ok: true });
+});
+
+// Eventos em tempo real (mensagens privadas e notificações). EventSource não envia
+// headers, então o token vem na query string (sempre sob HTTPS em produção).
+app.get('/api/me/events', (req, res) => {
+  const user = userFromToken(typeof req.query.token === 'string' ? req.query.token : undefined);
+  if (!user) {
+    res.status(401).json({ error: 'Sessão inválida.' });
+    return;
+  }
+  res.set({
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache, no-transform',
+    Connection: 'keep-alive',
+    'X-Accel-Buffering': 'no',
+  });
+  res.flushHeaders();
+  res.write('retry: 3000\n\n');
+  const unsubscribe = subscribe(user.id, res);
+  req.on('close', unsubscribe);
+});
+
+app.get('/api/me/notifications', (req, res) => {
+  const user = requireUser(req.headers.authorization);
+  res.json({ notifications: listNotifications(user.id) });
+});
+
+app.post('/api/me/notifications/read', (req, res) => {
+  const user = requireUser(req.headers.authorization);
+  markNotificationsRead(user.id, { ids: req.body?.ids });
+  res.json({ ok: true });
+});
+
+// ---- Mensagens privadas ----
+
+app.get('/api/me/conversations', (req, res) => {
+  const user = requireUser(req.headers.authorization);
+  res.json({ conversations: conversations(user) });
+});
+
+app.get('/api/me/dm/:peerId', (req, res) => {
+  const user = requireUser(req.headers.authorization);
+  res.json({ messages: conversation(user, String(req.params.peerId)) });
+});
+
+app.post('/api/me/dm/:peerId', (req, res) => {
+  const user = requireUser(req.headers.authorization);
+  res.status(201).json({ message: sendDm(user, String(req.params.peerId), req.body?.text) });
+});
+
+app.post('/api/me/dm/:peerId/read', (req, res) => {
+  const user = requireUser(req.headers.authorization);
+  markConversationRead(user, String(req.params.peerId));
+  res.json({ ok: true });
+});
+
+// ---- Salas ----
+
+app.post('/api/token', async (req, res) => {
+  const user = requireUser(req.headers.authorization);
+  const { room } = req.body ?? {};
   if (typeof room !== 'string' || !isValidRoomName(room)) {
     res.status(400).json({ error: 'Nome de sala inválido (use letras, números, "-" ou "_").' });
     return;
   }
-  if (role !== 'presenter' && role !== 'viewer') {
-    res.status(400).json({ error: 'Papel inválido: use "presenter" ou "viewer".' });
-    return;
-  }
-
-  const displayName = typeof name === 'string' && name.trim() ? name.trim().slice(0, 64) : 'Anônimo';
-  const identity = `${role}-${randomUUID()}`;
-  const token = await createToken(room, identity, displayName, role as Role);
-  touchPerson(displayName, room);
-
+  // Identidade única por conexão (a mesma pessoa pode abrir duas abas).
+  const identity = `${user.id}:${randomUUID().slice(0, 8)}`;
+  const token = await createToken(room, identity, user.name, 'viewer', user.id);
+  touchUser(user.id, room);
   res.json({ token, url: config.livekitUrl });
+});
+
+app.get('/api/rooms/active', async (req, res) => {
+  requireUser(req.headers.authorization);
+  res.json({ rooms: await listActiveRooms() });
 });
 
 // ---- Chat (histórico persistente) ----
@@ -108,8 +212,22 @@ app.get('/api/rooms/:room/info', async (req, res) => {
 
 // ---- Amigos ----
 
-app.get('/api/friends', async (_req, res) => {
-  res.json(await listFriends());
+app.get('/api/friends', async (req, res) => {
+  const user = requireUser(req.headers.authorization);
+  res.json({ friends: (await listFriends()).filter((f) => f.id !== user.id) });
+});
+
+// Quem começou a transmitir avisa os amigos (menos quem já está na sala).
+app.post('/api/rooms/:room/live', async (req, res) => {
+  const caller = await authenticate(req.headers.authorization, roomParam(req.params.room));
+  if (caller.userId && shouldNotifyLive(caller.userId, caller.room)) {
+    const present = await usersInRoom(caller.room);
+    for (const u of listUsers()) {
+      if (u.id === caller.userId || present.has(u.id)) continue;
+      notify(u.id, 'live', { room: caller.room, fromId: caller.userId, fromName: caller.name });
+    }
+  }
+  res.json({ ok: true });
 });
 
 app.use('/api', (_req, res) => {

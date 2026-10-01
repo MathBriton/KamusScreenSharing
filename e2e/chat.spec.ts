@@ -46,11 +46,12 @@ test('servidor recusa formatos que não são imagem', async ({ browser }) => {
   const ana = await newPerson(browser);
   await joinRoom(ana, room, 'Ana');
   const status = await ana.evaluate(async (r) => {
+    const session = JSON.parse(localStorage.getItem('kamus:session')!);
     const { token } = await (
       await fetch('/api/token', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ room: r, name: 'Ana', role: 'viewer' }),
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.token}` },
+        body: JSON.stringify({ room: r }),
       })
     ).json();
     const res = await fetch(`/api/rooms/${r}/uploads`, {

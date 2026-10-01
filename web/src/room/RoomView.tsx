@@ -10,7 +10,7 @@ import {
   type RemoteTrackPublication,
 } from 'livekit-client';
 import { toast } from 'sonner';
-import { fetchRoomInfo, fetchToken } from '@/api';
+import { announceLive, fetchRoomInfo, fetchToken } from '@/api';
 import { Chat } from '@/chat/Chat';
 import { canShareScreen } from '@/device';
 import { subscribeNotices } from '@/notices';
@@ -67,11 +67,13 @@ function pickDefault(streams: ScreenStream[]): ScreenStream | undefined {
 interface Props {
   room: string;
   name: string;
+  /** Sessão do perfil (nome + PIN). */
+  sessionToken: string;
   onLeave: () => void;
   onJoinRoom: (room: string) => void;
 }
 
-export function RoomView({ room: roomName, name, onLeave, onJoinRoom }: Props) {
+export function RoomView({ room: roomName, name, sessionToken, onLeave, onJoinRoom }: Props) {
   const [room] = useState(() => new Room({ adaptiveStream: true, dynacast: true }));
   const stageRef = useRef<HTMLElement>(null);
   const [state, setState] = useState<ConnectionState>(ConnectionState.Disconnected);
@@ -115,7 +117,7 @@ export function RoomView({ room: roomName, name, onLeave, onJoinRoom }: Props) {
     let cancelled = false;
     (async () => {
       try {
-        const { token, url } = await fetchToken(roomName, name, 'viewer');
+        const { token, url } = await fetchToken(roomName, sessionToken);
         if (cancelled) return;
         await room.connect(url, token);
         if (cancelled) return;
@@ -137,7 +139,13 @@ export function RoomView({ room: roomName, name, onLeave, onJoinRoom }: Props) {
         .off(RoomEvent.ConnectionQualityChanged, onQuality);
       room.disconnect();
     };
-  }, [room, roomName, name]);
+    // O nome é atualizado sem reconectar (efeito abaixo).
+  }, [room, roomName, sessionToken]);
+
+  // Trocou o nome no Perfil: atualiza na sala sem reconectar.
+  useEffect(() => {
+    if (connected && room.localParticipant.name !== name) void room.localParticipant.setName(name).catch(() => {});
+  }, [room, name, connected]);
 
   // Avisos de entrada/saída e de início/fim de transmissão.
   useEffect(() => subscribeNotices(room, (n) => toast(n.text, { duration: 3000 })), [room]);
@@ -150,6 +158,8 @@ export function RoomView({ room: roomName, name, onLeave, onJoinRoom }: Props) {
     if (!room.localParticipant.isScreenShareEnabled) return;
     setBroadcastStartedAt(Date.now());
     await room.localParticipant.setAttributes({ role: 'presenter', fps: String(preset.fps) });
+    // Avisa os amigos (sininho); falhar aqui não atrapalha a transmissão.
+    if (token) void announceLive(roomName, token).catch(() => {});
   };
 
   const stopBroadcast = async () => {
@@ -272,6 +282,7 @@ export function RoomView({ room: roomName, name, onLeave, onJoinRoom }: Props) {
         statsOwner={selected ? (selected.isLocal ? 'você' : selected.name) : undefined}
         onHome={onLeave}
         onJoinRoom={onJoinRoom}
+        onLeave={onLeave}
       />
 
       <div className="flex min-h-0 flex-1 flex-col md:flex-row">

@@ -12,7 +12,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Kamus Screen Sharing** é um compartilhamento de tela **1-para-muitos no navegador**, para um grupo
 pequeno de amigos. A voz fica no Discord; o app cuida só de **tela + chat**. Não é um produto público:
-não há contas nem autenticação. Quem tem o link da sala entra.
+não há e-mail nem senha; cada pessoa tem um **perfil leve (nome + PIN de 4–6 dígitos)**, criado na
+primeira entrada. Quem tem o link da sala e um perfil entra.
 
 Princípios que guiam as decisões:
 
@@ -33,7 +34,10 @@ Princípios que guiam as decisões:
 | Palco | **Grade** adaptável (1×1, 2×1, 2×2, 3×2, 3×3…) ou **Foco** (selecionada grande + miniaturas). Cards com avatar, nome, LIVE, "Transmitindo", microfone (visual) e menu; borda verde na selecionada. **Zoom** por vídeo (roda, pinça, arrastar, `+ - 0`); tela cheia (`F`); picture-in-picture (`P`); `G` alterna Grade/Foco; `1–9` escolhe a transmissão. |
 | Chat | **Persistente** (SQLite, retenção de 90 dias): histórico para quem chega depois; links clicáveis; **colar/arrastar imagens** e **rabiscar no print** antes de enviar (seta, círculo, retângulo, traço); prévia de links diretos de imagem/GIF; abas **Chat / Imagens / Links**; lightbox. **@menções** com autocompletar, destaque e aviso (toast + notificação do navegador); **responder citando**; **fixar mensagens** (barra no topo; fixadas não expiram); **busca** no histórico inteiro (filtros Links/Imagens, salto até a mensagem); **"fulano está digitando…"**. |
 | Presença | Participantes com transmitindo/parado, `1080p · 60 FPS`, microfone (visual) e qualidade da conexão; avisos de entrada/saída/início/fim de transmissão (toast + linha no chat). |
-| Topbar / Amigos | Na home: `web/src/layout/TopBar.tsx`. Na sala: `web/src/room/RoomTopBar.tsx`. Ambas com o menu **Amigos** (online com sala/ao vivo/Entrar e "vistos recentemente"). Novos menus entram nessas barras. |
+| Perfil | **Nome + PIN** (`web/src/account/`): o nome é único sem diferenciar acentos/maiúsculas; o PIN fica com scrypt; 5 erros bloqueiam o nome por 5 min. Sessão em `localStorage` (`kamus:session`). Menu **Perfil**: trocar nome, trocar PIN, sair da sala, sair da conta. |
+| Topbar | Na home: `web/src/layout/TopBar.tsx`. Na sala: `web/src/room/RoomTopBar.tsx` (Salas/Amigos só com ícone abaixo de 2xl; código e métricas a partir de xl). Menus **Salas** (ativas agora com quem está/ao vivo, criar/entrar, recentes), **Amigos** (online com sala/ao vivo/Entrar, offline com "visto há…", botão de mensagem com não lidas), **sininho** e **Perfil**. Novos menus entram nessas barras. |
+| Mensagens privadas | Painel lateral (`DmPanel`) aberto pelo menu Amigos ou pelo sininho; histórico (últimas 200), entrega em tempo real por **SSE** (`/api/me/events`), contador de não lidas. |
+| Sininho | Notificações persistentes: **mensagem privada**, **menção** em qualquer sala e **amigo ficou ao vivo** (no máx. 1 aviso a cada 10 min por pessoa+sala; não avisa quem já está na sala). Toast + notificação do navegador com a aba em segundo plano; clicar abre a conversa ou entra na sala. |
 | Celular | Detecta navegador móvel e só permite assistir, explicando o motivo. |
 
 ## Comandos
@@ -71,15 +75,20 @@ navegador ──POST /api/token──▶ server (Express) ──▶ JWT do LiveK
 - **server/** (Node 22, Express 5, TypeScript, ESM)
   - `index.ts`: rotas. `token.ts`: emissão do JWT. `livekit.ts`: `RoomServiceClient`, autenticação das
     rotas pelo **próprio token do LiveKit** (`Authorization: Bearer`) e `broadcast()`.
-  - `chat.ts`: mensagens, uploads, retenção. `images.ts`: detecção de formato pelos bytes (PNG/JPEG/GIF/WebP;
-    SVG proibido). `friends.ts`: presença (LiveKit) + "vistos" (tabela `people`). `db.ts`: schema SQLite
+  - `users.ts`: perfis (nome + PIN, scrypt, bloqueio por tentativas) e sessões (hash sha256 do token).
+    `events.ts`: SSE por usuário. `notifications.ts`: sininho. `dms.ts`: mensagens privadas.
+  - `chat.ts`: mensagens, uploads, retenção, avisos de menção. `images.ts`: detecção de formato pelos bytes (PNG/JPEG/GIF/WebP;
+    SVG proibido). `friends.ts`: presença (participantes
+    do LiveKit com o atributo `userId`) + salas ativas. `db.ts`: schema SQLite
     (`node:sqlite`). `config.ts`: variáveis de ambiente.
 - **web/** (React 19, Vite, Tailwind v4, shadcn/ui, `livekit-client`)
-  - `App.tsx`: roteamento manual (`/s/<sala>`); home com `TopBar`, sala em tela cheia.
+  - `App.tsx`: roteamento manual (`/s/<sala>`) dentro do `AccountProvider`; sem sessão mostra o login.
+  - `account/`: `AccountContext` (sessão, SSE, notificações, conversas), `LoginForm`, `DmPanel`.
   - `room/`: `RoomView` (conexão, transmissão, seleção, atalhos), `RoomTopBar`, `ControlBar`,
     `ParticipantsPanel`, `useMetrics` (ping, estatísticas WebRTC, cronômetros).
   - `stage/`: `Stage` (grade/foco), `StreamCard` (card com cabeçalho, menu e zoom), `useZoom`,
-    `useScreenShares`. `chat/`: chat persistente. `layout/`: topbar da home e Amigos.
+    `useScreenShares`. `chat/`: chat persistente. `layout/`: topbar da home e menus
+    (Salas, Amigos, sininho, Perfil).
     `components/ui/`: componentes shadcn. `UI/`: especificação visual. `index.css`: tokens do tema (ver `web/src/UI/TOKENS.md`).
 - **deploy/**: Compose de produção, Caddyfile, template do `livekit.yaml`, `setup.sh`.
 - **e2e/**: suíte Playwright. **.github/workflows/ci.yml**: CI em todo push + deploy opcional na `main`.
@@ -88,7 +97,18 @@ navegador ──POST /api/token──▶ server (Express) ──▶ JWT do LiveK
 
 | Método | Rota | Auth | Descrição |
 | --- | --- | --- | --- |
-| POST | `/api/token` | — | `{room, name, role}` → `{token, url}` |
+| POST | `/api/auth/check` | — | `{name}` → `{exists}` |
+| POST | `/api/auth/register` · `/api/auth/login` | — | `{name, pin}` → `{token, user}` (sessão) |
+| POST | `/api/auth/logout` | sessão | encerra a sessão |
+| GET / PATCH | `/api/me` | sessão | perfil / `{name}` para trocar o nome |
+| POST | `/api/me/pin` | sessão | `{current, pin}` |
+| GET | `/api/me/events?token=` | sessão (na query: o `EventSource` não manda cabeçalho) | SSE: `notification`, `notifications-read`, `dm` |
+| GET · POST | `/api/me/notifications` · `/api/me/notifications/read` | sessão | sininho; marcar lidas com `{ids?}` ou `{dmFrom?}` |
+| GET | `/api/me/conversations` | sessão | `[{peerId, last, unread}]` |
+| GET · POST | `/api/me/dm/:peerId` (e `/read`) | sessão | histórico / enviar `{text}` / marcar lida |
+| POST | `/api/token` | sessão | `{room}` → `{token, url}` (identidade `userId:aleatório`, nome do perfil) |
+| GET | `/api/rooms/active` | sessão | salas com gente: `[{room, people:[{name, live}]}]` |
+| POST | `/api/rooms/:room/live` | token da sala | avisa os amigos (sininho) que começou a transmitir |
 | GET | `/api/rooms/:room/messages` | token da sala | últimas 500 mensagens |
 | POST | `/api/rooms/:room/messages` | token da sala | `{text, attachmentIds, replyTo?}`; grava e repassa pelo LiveKit |
 | POST | `/api/rooms/:room/uploads` | token da sala | corpo binário da imagem (máx. `MAX_UPLOAD_MB`) |
@@ -97,7 +117,10 @@ navegador ──POST /api/token──▶ server (Express) ──▶ JWT do LiveK
 | GET | `/api/rooms/:room/pins` | token da sala | mensagens fixadas (qualquer idade) |
 | GET | `/api/rooms/:room/search` | token da sala | `?q=&kind=all\|links\|images` → até 50 resultados |
 | GET | `/api/rooms/:room/info` | token da sala | `{createdAt}` (duração da sessão) |
-| GET | `/api/friends` | — | `{online, recent}` |
+| GET | `/api/friends` | sessão | `{friends}` (sem a própria pessoa) |
+
+"Sessão" = `Authorization: Bearer <token da sessão>` (de `/api/auth/*`); "token da sala" = o JWT do
+LiveKit.
 
 ### Variáveis de ambiente (server)
 
@@ -124,5 +147,5 @@ navegador ──POST /api/token──▶ server (Express) ──▶ JWT do LiveK
 ## Fora de escopo (por decisão)
 
 Voz/microfone de verdade (usa-se o Discord; os botões Mic/Áudio são só visuais, reservando o lugar),
-controle de volume do espectador, autenticação/contas,
+controle de volume do espectador, contas com e-mail/senha/OAuth (o perfil é só nome + PIN),
 Kubernetes, controle remoto (exigiria app nativo).

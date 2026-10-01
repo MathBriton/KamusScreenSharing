@@ -9,6 +9,8 @@ export interface Caller {
   room: string;
   identity: string;
   name: string;
+  /** Perfil (nome + PIN) de quem está conectado. */
+  userId: string | null;
 }
 
 export class HttpError extends Error {
@@ -34,7 +36,7 @@ export async function authenticate(authorization: string | undefined, room: stri
     throw new HttpError(401, 'Token inválido ou expirado.');
   }
   if (!claims.sub || claims.video?.room !== room) throw new HttpError(403, 'Token não é desta sala.');
-  return { room, identity: claims.sub, name: claims.name || 'Anônimo' };
+  return { room, identity: claims.sub, name: claims.name || 'Anônimo', userId: claims.attributes?.userId ?? null };
 }
 
 /** Envia um evento para todos na sala (se a sala estiver vazia, não há para quem enviar). */

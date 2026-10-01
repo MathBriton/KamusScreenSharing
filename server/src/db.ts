@@ -43,6 +43,48 @@ db.exec(`
   );
 `);
 
+// Perfis (nome + PIN), sessões, mensagens privadas e notificações.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS users (
+    id         TEXT PRIMARY KEY,
+    name       TEXT NOT NULL,
+    name_key   TEXT NOT NULL UNIQUE,
+    pin_hash   TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
+    last_seen  INTEGER NOT NULL,
+    last_room  TEXT
+  );
+
+  -- Guarda só o hash do token de sessão.
+  CREATE TABLE IF NOT EXISTS sessions (
+    token_hash TEXT PRIMARY KEY,
+    user_id    TEXT NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    created_at INTEGER NOT NULL,
+    last_used  INTEGER NOT NULL
+  );
+
+  CREATE TABLE IF NOT EXISTS direct_messages (
+    id         TEXT PRIMARY KEY,
+    from_id    TEXT NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    to_id      TEXT NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    text       TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
+    read_at    INTEGER
+  );
+  CREATE INDEX IF NOT EXISTS dm_pair ON direct_messages (from_id, to_id, created_at);
+  CREATE INDEX IF NOT EXISTS dm_to ON direct_messages (to_id, read_at);
+
+  CREATE TABLE IF NOT EXISTS notifications (
+    id         TEXT PRIMARY KEY,
+    user_id    TEXT NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    kind       TEXT NOT NULL,
+    data       TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
+    read_at    INTEGER
+  );
+  CREATE INDEX IF NOT EXISTS notifications_user ON notifications (user_id, created_at);
+`);
+
 // Migrações simples: colunas adicionadas depois da primeira versão.
 function addColumn(table: string, column: string, definition: string) {
   const columns = db.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[];

@@ -8,11 +8,42 @@ export async function newPerson(browser: Browser, options: Parameters<Browser['n
   return context.newPage();
 }
 
-/** Abre o link da sala, informa o nome e espera conectar (barra de controles liberada). */
-export async function joinRoom(page: Page, room: string, name: string) {
+export const TEST_PIN = '1234';
+
+/**
+ * Entra com nome + PIN pela tela inicial (já aberta). Cria o perfil na primeira vez; nas
+ * seguintes, entra com o mesmo PIN (os testes reaproveitam nomes entre arquivos).
+ */
+export async function login(page: Page, name: string, pin = TEST_PIN) {
+  const form = page.getByRole('region', { name: 'Entrar' });
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await form.getByLabel('Seu nome').fill(name);
+    await form.getByRole('button', { name: 'Continuar' }).click();
+    const create = form.getByRole('button', { name: 'Criar perfil' });
+    const enter = form.getByRole('button', { name: 'Entrar', exact: true });
+    await expect(create.or(enter)).toBeVisible();
+    if (await create.isVisible()) {
+      await form.getByLabel('Escolha um PIN').fill(pin);
+      await form.getByLabel('Repita o PIN').fill(pin);
+      await create.click();
+    } else {
+      await form.getByLabel('PIN', { exact: true }).fill(pin);
+      await enter.click();
+    }
+    // Outro teste em paralelo pode ter criado o mesmo nome ao mesmo tempo: tenta de novo.
+    const profile = page.getByRole('button', { name: `Perfil de ${name}` });
+    const error = form.getByRole('alert');
+    await expect(profile.or(error)).toBeVisible();
+    if (await profile.isVisible()) return;
+    await form.getByRole('button', { name: /trocar nome/ }).click();
+  }
+  throw new Error(`não consegui entrar como ${name}`);
+}
+
+/** Abre o link da sala, entra com nome + PIN e espera conectar (chat liberado). */
+export async function joinRoom(page: Page, room: string, name: string, pin = TEST_PIN) {
   await page.goto(`/s/${room}`);
-  await page.getByLabel('Seu nome').fill(name);
-  await page.getByRole('button', { name: 'Entrar na sala' }).click();
+  await login(page, name, pin);
   await expect(page.getByRole('heading', { name: `Sala ${room}` })).toBeVisible();
   await expect(page.getByRole('textbox', { name: 'Mensagem', exact: true })).toBeEnabled();
 }

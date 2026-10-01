@@ -5,6 +5,9 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { FriendsMenu } from '@/layout/FriendsMenu';
+import { NotificationsMenu } from '@/layout/NotificationsMenu';
+import { ProfileMenu } from '@/layout/ProfileMenu';
+import { RoomsMenu } from '@/layout/RoomsMenu';
 import { cn } from '@/lib/utils';
 import { formatBitrate, type StreamStats } from './useMetrics';
 
@@ -25,7 +28,7 @@ export function connectionColor(q: ConnectionQuality): string {
 function Metric({ label, value, className }: { label: string; value: string; className?: string }) {
   return (
     <div className={cn('grid gap-0.5 px-3', className)}>
-      <span className="font-mono text-[13px] leading-none text-foreground tabular-nums">{value}</span>
+      <span className="font-mono text-[13px] leading-none whitespace-nowrap text-foreground tabular-nums">{value}</span>
       <span className="text-[11px] leading-none text-muted-foreground">{label}</span>
     </div>
   );
@@ -44,9 +47,23 @@ interface Props {
   statsOwner?: string;
   onHome: () => void;
   onJoinRoom: (room: string) => void;
+  onLeave: () => void;
 }
 
-export function RoomTopBar({ connectionStatus, roomName, count, live, elapsed, ping, connection, stats, statsOwner, onHome, onJoinRoom }: Props) {
+export function RoomTopBar({
+  connectionStatus,
+  roomName,
+  count,
+  live,
+  elapsed,
+  ping,
+  connection,
+  stats,
+  statsOwner,
+  onHome,
+  onJoinRoom,
+  onLeave,
+}: Props) {
   const [copied, setCopied] = useState(false);
   const link = `${window.location.origin}/s/${encodeURIComponent(roomName)}`;
 
@@ -79,18 +96,21 @@ export function RoomTopBar({ connectionStatus, roomName, count, live, elapsed, p
 
       <div className="h-6 w-px bg-border max-sm:hidden" />
 
-      <div className="grid min-w-0 gap-0.5">
+      <div className="grid min-w-20 gap-0.5">
         <h1 className="truncate text-sm leading-none font-semibold">Sala {roomName}</h1>
         <span className="text-[11px] leading-none text-muted-foreground">
           {count === 1 ? '1 na sala' : `${count} na sala`}
         </span>
       </div>
 
-      <FriendsMenu currentRoom={roomName} onJoinRoom={onJoinRoom} />
+      <nav className="flex shrink-0 items-center" aria-label="Menu principal">
+        <RoomsMenu currentRoom={roomName} onJoinRoom={onJoinRoom} compact />
+        <FriendsMenu currentRoom={roomName} onJoinRoom={onJoinRoom} compact />
+      </nav>
 
       <div
         className={cn(
-          'flex h-9 items-center gap-2 rounded-md border px-2.5 font-mono text-xs tabular-nums',
+          'flex h-9 shrink-0 items-center gap-2 rounded-md border px-2.5 font-mono text-xs tabular-nums',
           live ? 'border-live/40' : 'border-border',
         )}
         aria-label={live ? 'Sala ao vivo' : 'Ninguém transmitindo'}
@@ -117,7 +137,7 @@ export function RoomTopBar({ connectionStatus, roomName, count, live, elapsed, p
         </span>
       )}
 
-      <div className="flex h-9 items-center gap-2 rounded-md border pr-1 pl-2.5 max-md:hidden">
+      <div className="flex h-9 shrink-0 items-center gap-2 rounded-md border pr-1 pl-2.5 max-xl:hidden">
         <div className="grid gap-0.5">
           <span className="text-[10px] leading-none text-muted-foreground uppercase">Código</span>
           <span className="max-w-36 truncate font-mono text-xs leading-none">{roomName}</span>
@@ -129,7 +149,7 @@ export function RoomTopBar({ connectionStatus, roomName, count, live, elapsed, p
 
       <Tooltip>
         <TooltipTrigger asChild>
-          <div className="ml-auto flex items-center divide-x divide-border max-lg:hidden" data-testid="metrics">
+          <div className="ml-auto flex shrink-0 items-center divide-x divide-border max-xl:hidden" data-testid="metrics">
             <div className="flex items-center gap-2 pr-3">
               <Signal className={cn('size-4', connectionColor(connection))} aria-hidden />
               <Metric label="Ping" value={ping !== null ? `${ping} ms` : '—'} className="px-0" />
@@ -145,9 +165,14 @@ export function RoomTopBar({ connectionStatus, roomName, count, live, elapsed, p
         </TooltipContent>
       </Tooltip>
 
-      <Button size="icon-sm" variant="ghost" onClick={copy} aria-label="Copiar link" className="ml-auto md:hidden">
+      <Button size="icon-sm" variant="ghost" onClick={copy} aria-label="Copiar link" className="ml-auto xl:hidden">
         {copied ? <Check className="text-primary" /> : <Copy />}
       </Button>
+
+      <div className="flex shrink-0 items-center gap-1 xl:ml-2 xl:border-l xl:pl-2">
+        <NotificationsMenu onJoinRoom={onJoinRoom} />
+        <ProfileMenu onLeaveRoom={onLeave} />
+      </div>
     </header>
   );
 }

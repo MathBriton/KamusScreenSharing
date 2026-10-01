@@ -6,7 +6,9 @@
 }
 
 {$DOMAIN} {
-	encode zstd gzip
+	# Comprime tudo, menos o canal de eventos em tempo real (SSE), que não pode ficar em buffer.
+	@compressible not path /api/me/events
+	encode @compressible zstd gzip
 
 	# Sinalização do LiveKit (o livekit-client conecta em wss://DOMINIO/rtc).
 	@livekit path /rtc /rtc/* /twirp/*

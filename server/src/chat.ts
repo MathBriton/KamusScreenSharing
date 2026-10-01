@@ -5,6 +5,8 @@ import { config } from './config.js';
 import { db, uploadsDir } from './db.js';
 import { HttpError, broadcast, type Caller } from './livekit.js';
 import { sniffImage } from './images.js';
+import { notify } from './notifications.js';
+import { listUsers, nameKey } from './users.js';
 
 export const CHAT_TOPIC = 'chat';
 export const MAX_TEXT = 2000;
@@ -219,6 +221,7 @@ export async function postMessage(
 
   const message = findMessage(caller.room, id)!;
   await broadcast(caller.room, CHAT_TOPIC, { type: 'message', message });
+  notifyMentions(caller, message);
   return message;
 }
 
@@ -270,9 +273,35 @@ export function cleanup(now = Date.now()): void {
   // Mensagens fixadas não expiram (guardam material importante do grupo).
   const messages = db.prepare('DELETE FROM messages WHERE created_at < ? AND pinned_at IS NULL').run(cutoff);
   const people = db.prepare('DELETE FROM people WHERE last_seen < ?').run(cutoff);
+  db.prepare('DELETE FROM direct_messages WHERE created_at < ?').run(cutoff);
+  db.prepare('DELETE FROM notifications WHERE created_at < ?').run(cutoff);
   if (expired.length || Number(messages.changes) || Number(people.changes)) {
     console.log(
       `Limpeza: ${messages.changes} mensagens, ${expired.length} imagens, ${people.changes} pessoas (>${config.retentionDays} dias).`,
     );
+  }
+}
+
+const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/** Avisa no sininho quem foi @mencionado (mesmo fora da sala). */
+function notifyMentions(caller: Caller, message: ChatMessage): void {
+  if (!message.text.includes('@')) return;
+  const users = listUsers().sort((a, b) => b.name.length - a.name.length);
+  if (users.length === 0) return;
+  const byKey = new Map(users.map((u) => [nameKey(u.name), u]));
+  const pattern = new RegExp(`@(${users.map((u) => escapeRegExp(u.name)).join('|')})(?=$|[\\s.,!?:;)\\]])`, 'giu');
+  const mentioned = new Set<string>();
+  for (const match of message.text.matchAll(pattern)) {
+    const user = byKey.get(nameKey(match[1]));
+    if (user && user.id !== caller.userId) mentioned.add(user.id);
+  }
+  for (const userId of mentioned) {
+    notify(userId, 'mention', {
+      room: caller.room,
+      fromName: caller.name,
+      preview: message.text.slice(0, 140),
+      messageId: message.id,
+    });
   }
 }

@@ -4,14 +4,15 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { LoginForm } from './account/LoginForm';
+import { useAccount } from './account/AccountContext';
 import { canShareScreen } from './device';
 import { isValidRoomName, normalizeRoomName, randomRoomId } from './rooms';
 
 interface Props {
-  initialName: string;
   initialRoom?: string;
   recentRooms: string[];
-  onEnter: (room: string, name: string) => void;
+  onEnter: (room: string) => void;
   onForgetRoom: (room: string) => void;
 }
 
@@ -25,23 +26,22 @@ function Panel({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
-export function Home({ initialName, initialRoom, recentRooms, onEnter, onForgetRoom }: Props) {
-  const [name, setName] = useState(initialName);
+export function Home({ initialRoom, recentRooms, onEnter, onForgetRoom }: Props) {
+  const { session } = useAccount();
   const [newRoom, setNewRoom] = useState('');
   const [room, setRoom] = useState(initialRoom ?? '');
 
-  const displayName = name.trim() || 'Anônimo';
   const newRoomName = normalizeRoomName(newRoom);
   const joinRoomName = normalizeRoomName(room);
 
   const create = (e: FormEvent) => {
     e.preventDefault();
-    onEnter(newRoom.trim() ? newRoomName : randomRoomId(), displayName);
+    onEnter(newRoom.trim() ? newRoomName : randomRoomId());
   };
 
   const join = (e: FormEvent) => {
     e.preventDefault();
-    if (isValidRoomName(joinRoomName)) onEnter(joinRoomName, displayName);
+    if (isValidRoomName(joinRoomName)) onEnter(joinRoomName);
   };
 
   return (
@@ -62,30 +62,10 @@ export function Home({ initialName, initialRoom, recentRooms, onEnter, onForgetR
         </p>
       </header>
 
-      <div className="grid max-w-md gap-2">
-        <Label htmlFor="name" className="text-xs text-muted-foreground">
-          Seu nome
-        </Label>
-        <Input
-          id="name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Ex.: Maria"
-          maxLength={64}
-          autoFocus={!initialName}
-          className="h-10"
-        />
-      </div>
-
       {!canShareScreen && <MobileNotice />}
 
-      {initialRoom ? (
-        <form onSubmit={join} className="max-w-md">
-          <Button type="submit" size="lg" className="w-full">
-            Entrar na sala
-            <ArrowRight />
-          </Button>
-        </form>
+      {!session ? (
+        <LoginForm />
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
           <Panel title="Criar sala">
@@ -138,7 +118,7 @@ export function Home({ initialName, initialRoom, recentRooms, onEnter, onForgetR
                       variant="ghost"
                       size="sm"
                       className="rounded-r-none font-mono text-xs"
-                      onClick={() => onEnter(r, displayName)}
+                      onClick={() => onEnter(r)}
                     >
                       {r}
                     </Button>
